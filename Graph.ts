@@ -84,10 +84,10 @@ function aStarSearch<Node> (
       var minInfo = explored.getValue(min.node);
       var minEdges = graph.outgoingEdges(min.node);
 
-      minEdges = minEdges.sort(function (x,y) {return x.cost - y.cost;});
-
       frontier.remove(min);
       minInfo.priority = null;
+
+      minEdges.sort(function (x,y) {return x.cost - y.cost;});
 
       for (var edge of minEdges) { // FOR EACH NEIGHBOUR NODE
         var toCost = minInfo.cost + edge.cost;
@@ -121,7 +121,7 @@ function aStarSearch<Node> (
            explored.setValue(edge.to, newInfo);
            frontier.add(newPrio);
 
-           if(goal(edge.to)) {result = edge.to;}
+           if(goal(edge.to)) {result = edge.to; break;}
         }
       }
     }
