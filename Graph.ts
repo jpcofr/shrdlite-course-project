@@ -55,19 +55,93 @@ function aStarSearch<Node> (
     heuristics : (n:Node) => number,
     timeout : number
 ) : SearchResult<Node> {
-    // A dummy search result: it just picks the first possible neighbour
-    var result : SearchResult<Node> = {
-        path: [start],
-        cost: 0
-    };
-    while (result.path.length < 3) {
-        var edge : Edge<Node> = graph.outgoingEdges(start) [0];
-        if (! edge) break;
-        start = edge.to;
-        result.path.push(start);
-        result.cost += edge.cost;
+    var explored = new collections.Dictionary<Node, Info<Node>> ();
+    var frontier = new collections.BSTree<Prio<Node>>
+      ( function(x,y) {
+          var d = x.rank - y.rank;
+          return d != 0 ? d : graph.compareNodes(x.node, y.node); } );
+
+    var startHeur = heuristics(start);
+
+    var startPrio = { node      : start     ,
+                      rank      : startHeur } ;
+
+    var startInfo = { parent    : start      ,
+                      cost      : 0          ,
+                      heuristic : startHeur  ,
+                      priority  : startPrio  } ;
+
+    explored.setValue(start, startInfo);
+    frontier.add(startPrio);
+
+    var result = goal(start) ? start : null;
+
+    while(!frontier.isEmpty() && result == null) { // FOR EACH NODE IN THE FRONTIER
+      var min = frontier.minimum();
+      var minInfo = explored.getValue(min.node);
+      var minEdges = graph.outgoingEdges(min.node);
+
+      frontier.remove(min);
+      minInfo.priority = null;
+
+      for (var edge of minEdges) { // FOR EACH NEIGHBOUR NODE
+        var toCost = minInfo.cost + edge.cost;
+        var toInfo = explored.getValue(edge.to);
+
+        if(toInfo != null) { // IF IT HAS BEEN EXPLORED
+          var toPrio = toInfo.priority;
+
+          if (toPrio != null && toInfo.cost > toCost) {
+            explored.remove(edge.to);
+            frontier.remove(toPrio);
+
+            toInfo.cost = toCost; toInfo.parent = min.node;
+            toPrio.rank = toInfo.cost + toInfo.heuristic;
+
+            explored.setValue(edge.to, toInfo);
+            frontier.add(toPrio);
+          }
+        }
+        else { // IF IT HAS NOT BEEN EXPLORED
+           var newHeur = heuristics(edge.to);
+
+           var newPrio = { node : edge.to          ,
+                           rank : toCost + newHeur } ;
+
+           var newInfo = { parent    : min.node ,
+                           cost      : toCost   ,
+                           heuristic : newHeur  ,
+                           priority  : newPrio  } ;
+
+           explored.setValue(edge.to, newInfo);
+           frontier.add(newPrio);
+
+           if(goal(edge.to)) {result = edge.to;}
+        }
+      }
     }
-    return result;
+
+    if(result == null) return {path : [], cost : 0};
+
+    var cost = explored.getValue(result).cost;
+    var path = [result];
+
+    while(result != start) {
+      result = explored.getValue(result).parent;
+      path = [result].concat(path);
+    }
+
+    return {path : path, cost : cost};
 }
 
+class Info<Node> {
+  parent    : Node       ;
+  cost      : number     ;
+  heuristic : number     ;
+  priority  : Prio<Node> ;
+}
 
+class Prio<Node> {
+  node : Node   ;
+  rank : number ;
+}
