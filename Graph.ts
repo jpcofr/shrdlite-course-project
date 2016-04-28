@@ -55,6 +55,9 @@ function aStarSearch<Node> (
     heuristics : (n:Node) => number,
     timeout : number
 ) : SearchResult<Node> {
+    var failure : SearchResult<Node> = {path : [], cost : 0};
+    var timer = setTimeout(function () {return failure;}, timeout * 1000);
+
     var explored = new collections.Dictionary<Node, Info<Node>> ();
     var frontier = new collections.BSTree<Prio<Node>>
       ( function(x,y) {
@@ -123,16 +126,18 @@ function aStarSearch<Node> (
       }
     }
 
-    if(result == null) return {path : [], cost : 0};
+    if(result == null) return failure;
 
     var cost = explored.getValue(result).cost;
     var path = [result];
 
     while(result != start) {
       result = explored.getValue(result).parent;
-      path = [result].concat(path);
+      path.push(result);
     }
+    path.reverse();
 
+    clearTimeout(timer);
     return {path : path, cost : cost};
 }
 
