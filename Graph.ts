@@ -56,7 +56,7 @@ function aStarSearch<Node> (
     timeout : number
 ) : SearchResult<Node> {
     var failure : SearchResult<Node> = {path : [], cost : 0};
-    var timer = setTimeout(function () {return failure;}, timeout * 1000);
+    //var timer = setTimeout(function () {return failure;}, timeout * 1000);
 
     var explored = new collections.Dictionary<Node, Info<Node>> ();
     var frontier = new collections.BSTree<Prio<Node>>
@@ -77,17 +77,15 @@ function aStarSearch<Node> (
     explored.setValue(start, startInfo);
     frontier.add(startPrio);
 
-    var result = goal(start) ? start : null;
-
-    while(!frontier.isEmpty() && result == null) { // FOR EACH NODE IN THE FRONTIER
+    while(!frontier.isEmpty()) { // FOR EACH NODE IN THE FRONTIER
       var min = frontier.minimum();
+      if(goal(min.node)) {break;}
+
       var minInfo = explored.getValue(min.node);
       var minEdges = graph.outgoingEdges(min.node);
 
       frontier.remove(min);
       minInfo.priority = null;
-
-      minEdges.sort(function (x,y) {return x.cost - y.cost;});
 
       for (var edge of minEdges) { // FOR EACH NEIGHBOUR NODE
         var toCost = minInfo.cost + edge.cost;
@@ -120,13 +118,13 @@ function aStarSearch<Node> (
 
            explored.setValue(edge.to, newInfo);
            frontier.add(newPrio);
-
-           if(goal(edge.to)) {result = edge.to; break;}
         }
       }
     }
 
-    if(result == null) return failure;
+    if(frontier.isEmpty()) return failure;
+
+    var result = frontier.minimum().node;
 
     var cost = explored.getValue(result).cost;
     var path = [result];
@@ -137,7 +135,7 @@ function aStarSearch<Node> (
     }
     path.reverse();
 
-    clearTimeout(timer);
+    //clearTimeout(timer);
     return {path : path, cost : cost};
 }
 
