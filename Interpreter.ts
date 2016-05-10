@@ -83,7 +83,7 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
 
     export function stringify(result : InterpretationResult) : string {
         return result.interpretation.map((literals) => {
-            :e            return literals.map((lit) => stringifyLiteral(lit)).join(" & ");
+            return literals.map((lit) => stringifyLiteral(lit)).join(" & ");
             // return literals.map(stringifyLiteral).join(" & ");
         }).join(" | ");
     }
@@ -137,10 +137,11 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
 
     function interpretEntity(ent : Parser.Entity, state : Worldstate) : ObjectInfo {
         // calls interpretObject, more complex quantifier handling can be added later
+        return;
     }
 
     function interpretLocation(loc : Parser.Location, state : Worldstate) : LocationInfo {
-
+        return;
     }
 
     class ObjectInfo {
