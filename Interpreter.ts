@@ -3,12 +3,12 @@
 
 /**
 * Interpreter module
-* 
+*
 * The goal of the Interpreter module is to interpret a sentence
 * written by the user in the context of the current world state. In
 * particular, it must figure out which objects in the world,
 * i.e. which elements in the `objects` field of WorldState, correspond
-* to the ones referred to in the sentence. 
+* to the ones referred to in the sentence.
 *
 * Moreover, it has to derive what the intended goal state is and
 * return it as a logical formula described in terms of literals, where
@@ -34,7 +34,7 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
 * @param parses List of parses produced by the Parser.
 * @param currentState The current state of the world.
 * @returns Augments ParseResult with a list of interpretations. Each interpretation is represented by a list of Literals.
-*/    
+*/
     export function interpret(parses : Parser.ParseResult[], currentState : WorldState) : InterpretationResult[] {
         var errors : Error[] = [];
         var interpretations : InterpretationResult[] = [];
@@ -67,23 +67,23 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
     * hold among some objects.
     */
     export interface Literal {
-	/** Whether this literal asserts the relation should hold
-	 * (true polarity) or not (false polarity). For example, we
-	 * can specify that "a" should *not* be on top of "b" by the
-	 * literal {polarity: false, relation: "ontop", args:
-	 * ["a","b"]}.
-	 */
+  /** Whether this literal asserts the relation should hold
+   * (true polarity) or not (false polarity). For example, we
+   * can specify that "a" should *not* be on top of "b" by the
+   * literal {polarity: false, relation: "ontop", args:
+   * ["a","b"]}.
+   */
         polarity : boolean;
-	/** The name of the relation in question. */
+  /** The name of the relation in question. */
         relation : string;
-	/** The arguments to the relation. Usually these will be either objects 
+  /** The arguments to the relation. Usually these will be either objects
      * or special strings such as "floor" or "floor-N" (where N is a column) */
         args : string[];
     }
 
     export function stringify(result : InterpretationResult) : string {
         return result.interpretation.map((literals) => {
-            return literals.map((lit) => stringifyLiteral(lit)).join(" & ");
+            :e            return literals.map((lit) => stringifyLiteral(lit)).join(" & ");
             // return literals.map(stringifyLiteral).join(" & ");
         }).join(" | ");
     }
@@ -117,5 +117,36 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
         return interpretation;
     }
 
-}
+    function interpretObject(obj : Parser.Object, state : Worldstate) : ObjectInfo {
+        // returns the list of strings representing the relevant objects
+        var res : ObjectInfo = [];
 
+        if (obj.form) { // Basic case
+
+            var objDef = {
+                form : obj.form,
+                size : obj.size,
+                color : obj.color };
+            // look up the key in state.objects corresponding to the value
+            // objDef, set res to this key
+        }
+        // Handle objects with relative definitions recursively, using
+        // row and col coordinates
+        return res;
+    }
+
+    function interpretEntity(ent : Parser.Entity, state : Worldstate) : ObjectInfo {
+        // calls interpretObject, more complex quantifier handling can be added later
+    }
+
+    function interpretLocation(loc : Parser.Location, state : Worldstate) : LocationInfo {
+
+    }
+
+    class ObjectInfo {
+        objects : [{id : string; row : number; col : number}];
+    }
+
+    class LocationInfo {
+        locations : [{rel : string; id : string}];
+    }
