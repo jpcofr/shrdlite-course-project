@@ -117,7 +117,7 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
         return interpretation;
     }
 
-    function interpretObject(obj : Parser.Object, state : Worldstate) : ObjectInfo {
+    function interpretObject(obj : Parser.Object, state : Worldstate, map : ObjectMap) : ObjectInfo {
         // returns the list of strings representing the relevant objects
         var res : ObjectInfo = [];
 
@@ -135,12 +135,12 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
         return res;
     }
 
-    function interpretEntity(ent : Parser.Entity, state : Worldstate) : ObjectInfo {
+    function interpretEntity(ent : Parser.Entity, state : Worldstate, map : ObjectMap) : ObjectInfo {
         // calls interpretObject, more complex quantifier handling can be added later
         return;
     }
 
-    function interpretLocation(loc : Parser.Location, state : Worldstate) : LocationInfo {
+    function interpretLocation(loc : Parser.Location, state : Worldstate, map : ObjectMap) : LocationInfo {
         return;
     }
 
@@ -151,3 +151,8 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
     class LocationInfo {
         locations : [{rel : string; id : string}];
     }
+
+    class ObjectMap {
+        coords : { [id : string] : {row : number; col : number}};
+    }
+}
