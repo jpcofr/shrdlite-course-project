@@ -29,21 +29,21 @@ module Interpreter {
     //////////////////////////////////////////////////////////////////////
     // exported functions, classes and interfaces/types
 
-/**
-Top-level function for the Interpreter. It calls `interpretCommand` for each possible parse of the command. No need to change this one.
-* @param parses List of parses produced by the Parser.
-* @param currentState The current state of the world.
-* @returns Augments ParseResult with a list of interpretations. Each interpretation is represented by a list of Literals.
-*/
-    export function interpret(parses : Parser.ParseResult[], currentState : WorldState) : InterpretationResult[] {
-        var errors : Error[] = [];
-        var interpretations : InterpretationResult[] = [];
+    /**
+    Top-level function for the Interpreter. It calls `interpretCommand` for each possible parse of the command. No need to change this one.
+    * @param parses List of parses produced by the Parser.
+    * @param currentState The current state of the world.
+    * @returns Augments ParseResult with a list of interpretations. Each interpretation is represented by a list of Literals.
+    */
+    export function interpret(parses: Parser.ParseResult[], currentState: WorldState): InterpretationResult[] {
+        var errors: Error[] = [];
+        var interpretations: InterpretationResult[] = [];
         parses.forEach((parseresult) => {
             try {
-                var result : InterpretationResult = <InterpretationResult>parseresult;
+                var result: InterpretationResult = <InterpretationResult>parseresult;
                 result.interpretation = interpretCommand(result.parse, currentState);
                 interpretations.push(result);
-            } catch(err) {
+            } catch (err) {
                 errors.push(err);
             }
         });
@@ -56,7 +56,7 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
     }
 
     export interface InterpretationResult extends Parser.ParseResult {
-        interpretation : DNFFormula;
+        interpretation: DNFFormula;
     }
 
     export type DNFFormula = Conjunction[];
@@ -67,28 +67,28 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
     * hold among some objects.
     */
     export interface Literal {
-  /** Whether this literal asserts the relation should hold
-   * (true polarity) or not (false polarity). For example, we
-   * can specify that "a" should *not* be on top of "b" by the
-   * literal {polarity: false, relation: "ontop", args:
-   * ["a","b"]}.
-   */
-        polarity : boolean;
-  /** The name of the relation in question. */
-        relation : string;
-  /** The arguments to the relation. Usually these will be either objects
-     * or special strings such as "floor" or "floor-N" (where N is a column) */
-        args : string[];
+        /** Whether this literal asserts the relation should hold
+         * (true polarity) or not (false polarity). For example, we
+         * can specify that "a" should *not* be on top of "b" by the
+         * literal {polarity: false, relation: "ontop", args:
+         * ["a","b"]}.
+         */
+        polarity: boolean;
+        /** The name of the relation in question. */
+        relation: string;
+        /** The arguments to the relation. Usually these will be either objects
+           * or special strings such as "floor" or "floor-N" (where N is a column) */
+        args: string[];
     }
 
-    export function stringify(result : InterpretationResult) : string {
+    export function stringify(result: InterpretationResult): string {
         return result.interpretation.map((literals) => {
             return literals.map((lit) => stringifyLiteral(lit)).join(" & ");
             // return literals.map(stringifyLiteral).join(" & ");
         }).join(" | ");
     }
 
-    export function stringifyLiteral(lit : Literal) : string {
+    export function stringifyLiteral(lit: Literal): string {
         return (lit.polarity ? "" : "-") + lit.relation + "(" + lit.args.join(",") + ")";
     }
 
@@ -105,28 +105,36 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
      * @param state The current state of the world. Useful to look up objects in the world.
      * @returns A list of list of Literal, representing a formula in disjunctive normal form (disjunction of conjunctions). See the dummy interpetation returned in the code for an example, which means ontop(a,floor) AND holding(b).
      */
-    function interpretCommand(cmd : Parser.Command, state : WorldState) : DNFFormula {
+    function interpretCommand(cmd: Parser.Command, state: WorldState): DNFFormula {
         // This returns a dummy interpretation involving two random objects in the world
-        var objects : string[] = Array.prototype.concat.apply([], state.stacks);
-        var a : string = objects[Math.floor(Math.random() * objects.length)];
-        var b : string = objects[Math.floor(Math.random() * objects.length)];
-        var interpretation : DNFFormula = [[
-            {polarity: true, relation: "ontop", args: [a, "floor"]},
-            {polarity: true, relation: "holding", args: [b]}
-        ]];
+        //        var objects: string[] = Array.prototype.concat.apply([], state.stacks);
+        //        var a: string = objects[Math.floor(Math.random() * objects.length)];
+        //        var b: string = objects[Math.floor(Math.random() * objects.length)];
+        //        var interpretation: DNFFormula = [[
+        //            { polarity: true, relation: "ontop", args: [a, "floor"] },
+        //            { polarity: true, relation: "holding", args: [b] }
+        //        ]];
+        
+        var interpretation: DNFFormula;
+        // Classify entity and location, determine the corresponding World objects.
+        var entity = interpretEntity(cmd.entity, state);
+        var location = interpretLocation(cmd.location, state);
+        // Make DNFFormula from entity/location interpretation.
+        
         return interpretation;
     }
 
-    function interpretObject(obj : Parser.Object, state : WorldState) : ObjectInfo {
+    function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
         // returns the list of strings representing the relevant objects
-        var res : ObjectInfo = {objects : []};
+        var res: ObjectInfo = { objects: [] };
 
         if (obj.form) { // Basic case
 
             var objDef = {
-                form : obj.form,
-                size : obj.size,
-                color : obj.color };
+                form: obj.form,
+                size: obj.size,
+                color: obj.color
+            };
             // look up the key in state.objects corresponding to the value
             // objDef, set res to this key
         }
@@ -135,22 +143,23 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
         return res;
     }
 
-    function interpretEntity(ent : Parser.Entity, state : WorldState) : ObjectInfo {
+    function interpretEntity(ent: Parser.Entity, state: WorldState): ObjectInfo {
         // calls interpretObject, more complex quantifier handling can be added later
-        return;
+        var res: ObjectInfo
+        return res;
     }
 
-    function interpretLocation(loc : Parser.Location, state : WorldState) : LocationInfo {
-        var res : LocationInfo = {locations : []};
+    function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
+        var res: LocationInfo = { locations: [] };
         return res;
     }
 
     class ObjectInfo {
-        objects : {id : string; row : number; col : number}[];
+        objects: { id: string; row: number; col: number }[];
     }
 
     class LocationInfo {
-        locations : {rel : string; id : string}[];
+        locations: { rel: string; id: string }[];
     }
 
     /*class ObjectMap {
