@@ -131,6 +131,7 @@ module Interpreter {
 
         var res : string [] = [];
         // TODO : refactor this case, try to make it less copy-pasty!
+        // (should be possible using filter)
         if (obj.form) { // Basic case
             var obList = state.objects;
             var f = obj.form;
@@ -168,17 +169,14 @@ module Interpreter {
             }
         }
 
-        // Handle objects with relative definitions recursively, using
-        // row and col coordinates
-
-        // res contains a list of object identifiers
-        // Create ObjectInfo having the row and col coordinates
-        if(obj.location){
-            res = res.concat(interpretObject(obj.object, state));
-            //TODO is the relation going to be managed at interpretLocation?
-            res = res.concat(interpretObject(obj.location.entity.object, state));
-            //locations: { rel: string; id: string }[];
-
+        else if(obj.location){
+            var possible = interpretObject(obj.object, state);
+            // list of object ids
+            var plocations = interpretLocation(obj.location, state);
+            // locations: { rel: string; id: string }[];
+            // search state stack to find which objects in possible
+            // have relation loc.rel to the object loc.id for a
+            // location loc in plocations.
         }
 
         return res;
