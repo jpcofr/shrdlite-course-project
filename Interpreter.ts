@@ -117,18 +117,46 @@ Top-level function for the Interpreter. It calls `interpretCommand` for each pos
         return interpretation;
     }
 
-    function interpretObject(obj : Parser.Object, state : WorldState) : ObjectInfo {
+    function interpretObject(obj : Parser.Object, state : WorldState) : string[] {
         // returns the list of strings representing the relevant objects
-        var res : ObjectInfo = {objects : []};
+        var res : string [] = [];
 
+        // TODO : refactor this case, try to make it less copy-pasty!
         if (obj.form) { // Basic case
-
-            var objDef = {
-                form : obj.form,
-                size : obj.size,
-                color : obj.color };
-            // look up the key in state.objects corresponding to the value
-            // objDef, set res to this key
+            var obList = state.objects;
+            var f = obj.form;
+            if (obj.size && obj.color) { // No missing information
+                var c = obj.color;
+                var s = obj.size;
+                for (var key in state.objects) {
+                    if (obList[key].form == f && obList[key].color == c && obList[key].size == s){
+                        res.push(key);
+                    }
+                }
+            }
+            else if (obj.size) { // Size known but not color
+                var s = obj.size;
+                for (var key in state.objects) {
+                    if (obList[key].form == f && obList[key].size == s){
+                        res.push(key);
+                    }
+                }
+            }
+            else if (obj.color) { // Color known but not size
+                var c = obj.color;
+                for (var key in state.objects) {
+                    if (obList[key].form == f && obList[key].color == c){
+                        res.push(key);
+                    }
+                }
+            }
+            else { // Only form is known
+                for (var key in state.objects) {
+                    if (state.objects[key].form == obj.form) {
+                        res.push(key);
+                    }
+                }
+            }
         }
         // Handle objects with relative definitions recursively, using
         // row and col coordinates
