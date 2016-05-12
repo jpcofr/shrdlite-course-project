@@ -119,7 +119,20 @@ module Interpreter {
         // Classify entity and location, determine the corresponding World objects.
         var entity = interpretEntity(cmd.entity, state);
         var location = interpretLocation(cmd.location, state);
-        // Make DNFFormula from entity/location interpretation.
+        
+        // Classify cmd.command
+        if (cmd.command == "take") { // Pick up entity.
+
+        } else if (cmd.command == "put") { // Put down entity.
+
+        } else if (cmd.command == "move") { // Move entity to location.
+
+        } else {
+
+        }
+        
+        // Make DNFFormula from command/entity/location interpretation.
+        
 
         return interpretation;
     }
@@ -127,9 +140,9 @@ module Interpreter {
     /**
     * Returns the list of strings representing the relevant objects
     */
-    function interpretObject(obj : Parser.Object, state : WorldState) : string[] {
+    function interpretObject(obj: Parser.Object, state: WorldState): string[] {
 
-        var res : string [] = [];
+        var res: string[] = [];
         // TODO : refactor this case, try to make it less copy-pasty!
         // (should be possible using filter)
         if (obj.form) { // Basic case
@@ -139,7 +152,7 @@ module Interpreter {
                 var c = obj.color;
                 var s = obj.size;
                 for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].color == c && obList[key].size == s){
+                    if (obList[key].form == f && obList[key].color == c && obList[key].size == s) {
                         res.push(key);
                     }
                 }
@@ -147,7 +160,7 @@ module Interpreter {
             else if (obj.size) { // Size known but not color
                 var s = obj.size;
                 for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].size == s){
+                    if (obList[key].form == f && obList[key].size == s) {
                         res.push(key);
                     }
                 }
@@ -155,7 +168,7 @@ module Interpreter {
             else if (obj.color) { // Color known but not size
                 var c = obj.color;
                 for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].color == c){
+                    if (obList[key].form == f && obList[key].color == c) {
                         res.push(key);
                     }
                 }
@@ -169,7 +182,7 @@ module Interpreter {
             }
         }
 
-        else if(obj.location){
+        else if (obj.location) {
             var possible = interpretObject(obj.object, state);
             // list of object ids
             var plocations = interpretLocation(obj.location, state);
