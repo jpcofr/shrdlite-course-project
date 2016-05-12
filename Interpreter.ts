@@ -124,8 +124,11 @@ module Interpreter {
         return interpretation;
     }
 
+    /**
+    * Returns the list of strings representing the relevant objects
+    */
     function interpretObject(obj : Parser.Object, state : WorldState) : string[] {
-        // returns the list of strings representing the relevant objects
+
         var res : string [] = [];
         // TODO : refactor this case, try to make it less copy-pasty!
         if (obj.form) { // Basic case
@@ -164,8 +167,20 @@ module Interpreter {
                 }
             }
         }
+
         // Handle objects with relative definitions recursively, using
         // row and col coordinates
+
+        // res contains a list of object identifiers
+        // Create ObjectInfo having the row and col coordinates
+        if(obj.location){
+            res = res.concat(interpretObject(obj.object, state));
+            //TODO is the relation going to be managed at interpretLocation?
+            res = res.concat(interpretObject(obj.location.entity.object, state));
+            //locations: { rel: string; id: string }[];
+
+        }
+
         return res;
     }
 
