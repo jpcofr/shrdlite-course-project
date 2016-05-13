@@ -1,4 +1,3 @@
-
 interface TestCase {
     world : string;
     utterance : string;
@@ -69,7 +68,17 @@ var allTestCases : TestCase[] = [
     {world: "small",
      utterance: "put a black ball in a box on the floor",
      interpretations: [["inside(f,k)"], ["ontop(f,floor)"]]
-    }
+    },
+
+    {world: "small",
+     utterance: "put it on the floor",
+     interpretations: [["ontop(a,floor)"]]},
+    {world: "small",
+     utterance: "put a small box on the floor",
+     interpretations: [["ontop(m,floor)"]]},
+    {world: "small",
+     utterance: "put a large box on the floor",
+     interpretations: [["ontop(k,floor)","ontop(l,floor)"]]}
 ];
 
 
@@ -108,4 +117,3 @@ var allTestCases : TestCase[] = [
 //                         "inside(e,k) & inside(f,m)", "inside(e,l) & inside(f,m)"]]
 //     }
 // );
-

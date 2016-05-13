@@ -118,33 +118,54 @@ module Interpreter {
      * @returns A list of list of Literal, representing a formula in disjunctive normal form (disjunction of conjunctions). See the dummy interpetation returned in the code for an example, which means ontop(a,floor) AND holding(b).
      */
     function interpretCommand(cmd: Parser.Command, state: WorldState): CommandInfo {
-        // This returns a dummy interpretation involving two random objects in the world
-        //        var objects: string[] = Array.prototype.concat.apply([], state.stacks);
-        //        var a: string = objects[Math.floor(Math.random() * objects.length)];
-        //        var b: string = objects[Math.floor(Math.random() * objects.length)];
-        //        var interpretation: DNFFormula = [[
-        //            { polarity: true, relation: "ontop", args: [a, "floor"] },
-        //            { polarity: true, relation: "holding", args: [b] }
-        //        ]];
         var result: CommandInfo = [];
 
         if (cmd.command == "take") {
           for (let ent of interpretEntity(cmd.entity, state)) {
-            result.push([{polarity: true, relation: "holding", args: [ent]}]);
+              if(ent != state.holding) {
+                  result.push([{polarity: true, relation: "holding", args: [ent]}]);
+              }
           }
+        }
+        else if (!cmd.entity && cmd.command == "put") {
+            for (let loc of interpretLocation(cmd.location, state)) {
+                result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
+            }
         }
         else { // command is either "put" or "move"
             for (let ent of interpretEntity(cmd.entity, state)) {
               for (let loc of interpretLocation(cmd.location, state)) {
-                  var obj = ent ? ent : state.holding; //TODO: need to handle missing entity outside of entity loop
+                  var obj = ent
 
-                  // TODO: handle all possible physical laws
+                  // avoid interpretations that break physical laws
                   if (  obj == loc.id
                         || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
                                                && loc.id    != "floor"
                         || loc.rel == "inside" && state.objects[loc.id].form != "box"
-                        || loc.rel == "inside" && state.objects[loc.id].size == "small"
-                                               && state.objects[obj].size    == "large") {
+
+                        || loc.rel == "inside" && state.objects[loc.id].size == state.objects[obj].size
+                                               && (state.objects[obj].form == "pyramid"
+                                                   || state.objects[obj].form == "plank"
+                                                   || state.objects[obj].form == "box")
+                        || loc.rel == "ontop"  && loc.id != "floor"
+                                               && (state.objects[loc.id].form == "ball"
+                                                   || state.objects[loc.id].form == "box")
+                        || (loc.rel == "inside" || loc.rel == "ontop")
+                                               && loc.id != "floor"
+                                               && state.objects[loc.id].size == "small"
+                                               && state.objects[obj].size    == "large"
+                        || loc.rel == "ontop"  && state.objects[obj].form == "box"
+                                               && state.objects[obj].size == "small"
+                                               && loc.id != "floor"
+                                               && state.objects[loc.id].size == "small"
+                                               && (state.objects[loc.id].form == "pyramid"
+                                                   || state.objects[loc.id].form == "brick")
+                        || loc.rel == "ontop"  && state.objects[obj].form == "box"
+                                               && state.objects[obj].size == "large"
+                                               && loc.id != "floor"
+                                               && state.objects[loc.id].form == "pyramid")
+                  {
+                      console.log(state.objects[loc.id].form);
                      continue;
                   }
                   var newResult : Literal = {polarity: true, relation: loc.rel, args: [obj, loc.id]}

@@ -5,7 +5,7 @@ class TextWorld implements World {
 
     constructor(public currentState : WorldState) {
         if (!this.currentState.arm) this.currentState.arm = 0;
-        if (this.currentState.holding) this.currentState.holding = null;
+        if (!this.currentState.holding) this.currentState.holding = null;
     }
 
     public readUserInput(prompt : string, callback : (input:string) => void) : void {
@@ -148,10 +148,10 @@ class TextWorld implements World {
     // Utilities
 
     private centerString(str : string, width : number) : string {
-		var padlen = width - str.length;
-	    if (padlen > 0) {
+    var padlen = width - str.length;
+      if (padlen > 0) {
             str = Array(Math.floor((padlen+3)/2)).join(" ") + str + Array(Math.floor((padlen+2)/2)).join(" ");
-	    }
+      }
         return str;
     }
 
