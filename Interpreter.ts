@@ -127,40 +127,30 @@ module Interpreter {
 
         var result: CommandInfo = [];
 
-        for (let ent of interpretEntity(cmd.entity, state)) {
-            if (cmd.command == "take") {
-                result.push([{
-                    polarity: true,
-                    relation: "holding",
-                    args: [ent]
-                }]);
-            }
-            else {
-                for (let loc of interpretLocation(cmd.location, state)) {
-                    var obj = ent ? ent : state.holding;
-
-                    // some exceptions for impossible cases:
-                    // we can't position an object in relation to itself
-                    if (obj == loc.id) { continue; }
-                    // balls can't go on top of things, they would roll off
-                    if (loc.rel == "ontop" && state.objects[obj].form == "ball") { continue; }
-                    if (loc.rel == "inside") {
-                        // objects can only go inside boxes
-                        if (state.objects[loc.id].form != "box") { continue; }
-                        // large objects can't go inside small boxes
-                        if (state.objects[loc.id].size == "small" && state.objects[obj].size == "large") { continue; }
-                    }
-
-                    result.push([{
-                        polarity: true,
-                        relation: loc.rel,
-                        args: [obj, loc.id]
-                    }]);
-                }
-            }
+        if (cmd.command == "take") {
+          for (let ent of interpretEntity(cmd.entity, state)) {
+            result.push([{polarity: true, relation: "holding", args: [ent]}]);
+          }
         }
-        if (result.length == 0) { result = null; }
-        return result;
+        else { // command is either "put" or "move"
+          for (let ent of interpretEntity(cmd.entity, state)) {
+            for (let loc of interpretLocation(cmd.location, state)) {
+              var obj = ent ? ent : state.holding;
+
+              if (  obj == loc.id
+                 || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
+                                        && state.objects[obj].form    != "floor"
+                 || loc.rel == "inside" && state.objects[loc.id].form != "box"
+                 || loc.rel == "inside" && state.objects[loc.id].size == "small"
+                                        && state.objects[obj].size    == "large") {
+                continue;
+              }
+              result.push([{polarity: true, relation: loc.rel, args: [obj, loc.id]}]);
+            }
+          }
+        }
+
+        return result.length == 0 ? null : result;
     }
 
     /**
