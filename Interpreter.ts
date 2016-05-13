@@ -101,7 +101,7 @@ module Interpreter {
      */
     type ObjectInfo = string[];
     type EntityInfo = string[];
-    type LocationInfo = { rel: string; id: string }[];
+    type LocationInfo = { rel: string; id: string } [];
     type CommandInfo = DNFFormula;
 
     /**
