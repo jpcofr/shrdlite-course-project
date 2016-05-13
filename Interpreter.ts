@@ -109,6 +109,10 @@ module Interpreter {
 
     //////////////////////////////////////////////////////////////////////
     // Sorting-based algorithms
+
+        /**
+         * Sorts the input list and removes duplicates
+         */
         function unique(xs : any[], cmp : (x:any, y:any) => number) : any[] {
           var sorted : any[] = xs.sort(cmp);
           var result : any[] = [];
@@ -123,6 +127,9 @@ module Interpreter {
           return result;
         }
 
+        /**
+         * Computes the intersection of two lists
+         */
         function intersect(xs : any[], ys : any[], cmp : (x:any, y:any) => number) {
           var sorted1 : any[] = xs.sort(cmp);
           var sorted2 : any[] = ys.sort(cmp);
@@ -260,7 +267,7 @@ module Interpreter {
     function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
         var foundObjs: string[] = [];
 
-        if(obj.location == null) {
+        if(obj.location == null) { // Attribute-based reference
           for(var id in state.objects) {
             if (  existsObjectId(id,state)
                && (obj.form  == null || obj.form  == "anyform" || obj.form == state.objects[id].form)
@@ -270,7 +277,7 @@ module Interpreter {
           }
           if (obj.form == "floor") { foundObjs.push("floor"); }
         }
-        else {
+        else { // Location-based reference
             var objects1 : string [] = interpretObject(obj.object, state);
             var objects2 : string [] = [];
 
@@ -279,7 +286,7 @@ module Interpreter {
             for(let location of locations) {
               var rc = locateObjectId(location.id, state);
 
-              if(rc == null) {
+              if(rc == null) { // We are dealing with the floor
                 if(location.rel == "ontop")
                   for(let row of state.stacks)
                     if(row.length > 0)
@@ -290,7 +297,7 @@ module Interpreter {
                     for(let elem of row)
                      {objects2.push(elem);}
               }
-              else {
+              else { // We are not dealing with the floor
                 var target = state.stacks[rc.row][rc.col];
                 var ontop  = state.stacks[rc.row][rc.col + 1];
 
