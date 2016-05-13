@@ -94,6 +94,16 @@ module Interpreter {
 
     //////////////////////////////////////////////////////////////////////
     // private functions
+
+    /**
+     * The additional information that turns the original parse tree into
+     * its augmented counterpart.
+     */
+    type ObjectInfo   = string [];
+    type EntityInfo   = string [];
+    type LocationInfo = {rel: string; id: string} [];
+    type CommandInfo  = DNFFormula;
+
     /**
      * The core interpretation function. The code here is just a
      * template; you should rewrite this function entirely. In this
@@ -105,7 +115,7 @@ module Interpreter {
      * @param state The current state of the world. Useful to look up objects in the world.
      * @returns A list of list of Literal, representing a formula in disjunctive normal form (disjunction of conjunctions). See the dummy interpetation returned in the code for an example, which means ontop(a,floor) AND holding(b).
      */
-    function interpretCommand(cmd: Parser.Command, state: WorldState): DNFFormula {
+    function interpretCommand(cmd: Parser.Command, state: WorldState): CommandInfo {
         // This returns a dummy interpretation involving two random objects in the world
         //        var objects: string[] = Array.prototype.concat.apply([], state.stacks);
         //        var a: string = objects[Math.floor(Math.random() * objects.length)];
@@ -140,7 +150,7 @@ module Interpreter {
     /**
     * Returns the list of strings representing the relevant objects
     */
-    function interpretObject(obj: Parser.Object, state: WorldState): string[] {
+    function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
 
         var res: string[] = [];
         // TODO : refactor this case, try to make it less copy-pasty!
@@ -188,7 +198,7 @@ module Interpreter {
             var pLocations = interpretLocation(obj.location, state);
             var stacks = state.stacks;
             for(var candidate of possible ){
-                for(var l of pLocations.locations ){
+                for(var l of pLocations ){
                     switch(l.rel) {
                         case "inside":
                             for(var currStack of stacks){
@@ -284,7 +294,7 @@ module Interpreter {
         return res;
     }
 
-    function interpretEntity(ent: Parser.Entity, state: WorldState): string[] {
+    function interpretEntity(ent: Parser.Entity, state: WorldState): EntityInfo {
         // calls interpretObject, more complex quantifier handling can be added later
         var res : string[] = [];
         return res;
@@ -292,27 +302,16 @@ module Interpreter {
 
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
         // location contains relation and entity
-        var res: LocationInfo = { locations: [] };
+        var res: LocationInfo = [];
         var rel = loc.relation;
         var ent = loc.entity;
         var candidates = interpretEntity(ent, state);
 
         for(let candidate of candidates){
-            res.locations.push({rel: rel, id: candidate});
+            res.push({rel: rel, id: candidate});
         }
         return res;
     }
 
-    class LocationInfo {
-        locations: { rel: string; id: string }[];
-    }
 
-    /*
-    class ObjectInfo {
-        objects: { id: string; row: number; col: number }[];
-    }
-
-    class ObjectMap {
-        coords : { [id : string] : {row : number; col : number}};
-    }*/
 }
