@@ -188,10 +188,7 @@ module Interpreter {
             if (obj.form == "anyform") { // needs to be a form that can be taken
                 for (var objId in state.objects) {
 
-                    if ((state.objects[objId].form == "ball" ||
-                        state.objects[objId].form == "table" ||
-                        state.objects[objId].form == "box") &&
-                        (obj.color == null || state.objects[objId].color == obj.color) &&
+                    if ((obj.color == null || state.objects[objId].color == obj.color) &&
                         (obj.size == null || state.objects[objId].size == obj.size) &&
                         existsObjectId(objId, state)) {
                         foundObjs.push(objId);
