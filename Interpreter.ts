@@ -135,9 +135,10 @@ module Interpreter {
                                    args : [ent] } ] );
                 }
                 else {
-                  var obj = ent ? ent : state.holding;
+                    var obj = ent ? ent : state.holding;
+                    if(obj == loc.id){continue;}
 
-                  result.push( [ { polarity : true,
+                    result.push( [ { polarity : true,
                                    relation : loc.rel,
                                    args : [obj, loc.id] } ] );
 
@@ -154,8 +155,6 @@ module Interpreter {
     function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
 
         var foundObjs: string[] = [];
-        // TODO : refactor this case, try to make it less copy-pasty!
-        // (should be candidates using filter)
         if (obj.form) { // Basic case
             var worldObjs = state.objects;
 
@@ -201,6 +200,9 @@ module Interpreter {
             var stacks = state.stacks;
             for (var candidate of candidates) {
                 for (var location of pLocations) {
+                    // the possible relations cannot refer to an object's location in
+                    // relation to itself
+                    if(candidate == location.id){continue;}
                     switch (location.rel) {
                         case "inside":
                             for (var currStack of stacks) {
