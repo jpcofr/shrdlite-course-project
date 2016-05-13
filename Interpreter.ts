@@ -288,23 +288,18 @@ module Interpreter {
     }
 
     function interpretEntity(ent: Parser.Entity, state: WorldState): EntityInfo {
-        // calls interpretObject, more complex quantifier handling can be added later
-        var res : string[] = [];
-        return res;
+        // calls interpretObject, handling quantifiers != any is an extension
+        return interpretObject(ent.object, state);
     }
 
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
-        // location contains relation and entity
-        var res: LocationInfo = [];
-        var rel = loc.relation;
-        var ent = loc.entity;
-        var candidates = interpretEntity(ent, state);
+        // gets objects from interpretEntity and pairs them with the input relation
+        var result : LocationInfo = [];
 
-        for(let candidate of candidates){
-            res.push({rel: rel, id: candidate});
+        for(let candidate of interpretEntity(loc.entity, state)) {
+            result.push({rel: loc.relation, id: candidate});
         }
-        return res;
+
+        return result;
     }
-
-
 }
