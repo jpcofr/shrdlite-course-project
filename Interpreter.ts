@@ -127,14 +127,14 @@ module Interpreter {
 
         var result : CommandInfo = [];
 
-        for(let loc of interpretLocation(cmd.location, state)) {
-            for(let ent of interpretEntity(cmd.entity, state)) {
-                if(cmd.command == "take") {
-                  result.push( [ { polarity : true,
-                                   relation : "holding",
-                                   args : [ent] } ] );
-                }
-                else {
+        for(let ent of interpretEntity(cmd.entity, state)) {
+            if(cmd.command == "take") {
+                result.push( [ { polarity : true,
+                                relation : "holding",
+                                args : [ent] } ] );
+            }
+            else {
+                for(let loc of interpretLocation(cmd.location, state)) {
                     var obj = ent ? ent : state.holding;
 
                     // we can't position an object in relation to itself
@@ -143,7 +143,6 @@ module Interpreter {
                     result.push( [ { polarity : true,
                                    relation : loc.rel,
                                    args : [obj, loc.id] } ] );
-
                 }
             }
         }
