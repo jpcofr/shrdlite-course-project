@@ -42,7 +42,9 @@ module Interpreter {
             try {
                 var result: InterpretationResult = <InterpretationResult>parseresult;
                 result.interpretation = interpretCommand(result.parse, currentState);
-                interpretations.push(result);
+                if(result.interpretation.length>0){
+                    interpretations.push(result);
+                }
             } catch (err) {
                 errors.push(err);
             }
@@ -150,7 +152,7 @@ module Interpreter {
           }
         }
 
-        return result.length == 0 ? null : result;
+        return result;
     }
 
     /**
@@ -178,10 +180,7 @@ module Interpreter {
             if (obj.form == "anyform") { // needs to be a form that can be taken
                 for (var objId in state.objects) {
 
-                    if ((state.objects[objId].form == "ball" ||
-                        state.objects[objId].form == "table" ||
-                        state.objects[objId].form == "box") &&
-                        (obj.color == null || state.objects[objId].color == obj.color) &&
+                    if ((obj.color == null || state.objects[objId].color == obj.color) &&
                         (obj.size == null || state.objects[objId].size == obj.size) &&
                         existsObjectId(objId, state)) {
                         foundObjs.push(objId);
