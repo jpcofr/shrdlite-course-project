@@ -184,13 +184,16 @@ module Interpreter {
             var worldObjs = state.objects;
 
             if (obj.form == "floor") { foundObjs.push("floor"); }
+
             if (obj.form == "anyform") { // needs to be a form that can be taken
                 for (var objId in state.objects) {
 
-                    if (state.objects[objId].form == "ball" ||
+                    if ((state.objects[objId].form == "ball" ||
                         state.objects[objId].form == "table" ||
-                        state.objects[objId].form == "box")
+                        state.objects[objId].form == "box") &&
+                        existsObjectId(objId, state)) {
                         foundObjs.push(objId);
+                    }
                 }
             }
             if (obj.size && obj.color) { // No missing information
