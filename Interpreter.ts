@@ -90,7 +90,7 @@ module Interpreter {
     }
 
     export function stringifyConjunction(con: Conjunction): string {
-          return con.map((lit) => stringifyLiteral(lit)).join(" & ")
+        return con.map((lit) => stringifyLiteral(lit)).join(" & ")
     }
 
     export function stringifyLiteral(lit: Literal): string {
@@ -105,8 +105,7 @@ module Interpreter {
     }
 
     function compareConjunction(c1 : Conjunction, c2 :Conjunction) : number {
-      return stringifyConjunction(c1).localeCompare(stringifyConjunction(c2));
-    }
+      return stringifyConjunction(c1).localeCompare(stringifyConjunction(c2))   }
 
     //////////////////////////////////////////////////////////////////////
     // Sorting-based algorithms
@@ -139,7 +138,13 @@ module Interpreter {
         }
 
     //////////////////////////////////////////////////////////////////////
-    // private functions
+    // Type Synonyms
+
+    /**
+     * A relative location
+     */
+    type Location = {rel: string, id: string};
+
 
     /**
      * The additional information that turns the original parse tree into
@@ -147,8 +152,11 @@ module Interpreter {
      */
     type ObjectInfo = string[];
     type EntityInfo = string[];
-    type LocationInfo = { rel: string; id: string } [];
+    type LocationInfo =  Location[];
     type CommandInfo = DNFFormula;
+
+    //////////////////////////////////////////////////////////////////////
+    // private functions
 
     /**
      * The core interpretation function. The code here is just a
@@ -171,48 +179,19 @@ module Interpreter {
               }
           }
         }
-        else if (!cmd.entity && cmd.command == "put") {
+        else if (!cmd.entity) {
             for (let loc of interpretLocation(cmd.location, state)) {
-                result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
+                if(!isIllegal(state.holding,loc,state)){
+                    result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
+                }
             }
         }
         else { // command is either "put" or "move"
             for (let ent of interpretEntity(cmd.entity, state)) {
               for (let loc of interpretLocation(cmd.location, state)) {
-                  var obj = ent
-
-                  // avoid interpretations that break physical laws
-                  if (  obj == loc.id
-                        || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
-                                               && loc.id    != "floor"
-                        || loc.rel == "inside" && state.objects[loc.id].form != "box"
-
-                        || loc.rel == "inside" && state.objects[loc.id].size == state.objects[obj].size
-                                               && (state.objects[obj].form == "pyramid"
-                                                   || state.objects[obj].form == "plank"
-                                                   || state.objects[obj].form == "box")
-                        || loc.rel == "ontop"  && loc.id != "floor"
-                                               && (state.objects[loc.id].form == "ball"
-                                                   || state.objects[loc.id].form == "box")
-                        || (loc.rel == "inside" || loc.rel == "ontop")
-                                               && loc.id != "floor"
-                                               && state.objects[loc.id].size == "small"
-                                               && state.objects[obj].size    == "large"
-                        || loc.rel == "ontop"  && state.objects[obj].form == "box"
-                                               && state.objects[obj].size == "small"
-                                               && loc.id != "floor"
-                                               && state.objects[loc.id].size == "small"
-                                               && (state.objects[loc.id].form == "pyramid"
-                                                   || state.objects[loc.id].form == "brick")
-                        || loc.rel == "ontop"  && state.objects[obj].form == "box"
-                                               && state.objects[obj].size == "large"
-                                               && loc.id != "floor"
-                                               && state.objects[loc.id].form == "pyramid")
-                  {
-                      console.log(state.objects[loc.id].form);
-                     continue;
+                  if(!isIllegal(ent,loc,state)){
+                      result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
                   }
-                  result.push([{polarity: true, relation: loc.rel, args: [obj, loc.id]}]);
             }
           }
         }
@@ -223,7 +202,38 @@ module Interpreter {
 
         return result;
     }
+    /**
+    * Checks whether placing the given object in the given location follows the physical laws
+    */
 
+    function isIllegal(obj: string, loc: Location, state: WorldState){
+        return obj == loc.id
+               || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
+                                      && loc.id    != "floor"
+               || loc.rel == "inside" && state.objects[loc.id].form != "box"
+
+               || loc.rel == "inside" && state.objects[loc.id].size == state.objects[obj].size
+                                      && (state.objects[obj].form == "pyramid"
+                                          || state.objects[obj].form == "plank"
+                                          || state.objects[obj].form == "box")
+               || loc.rel == "ontop"  && loc.id != "floor"
+                                      && (state.objects[loc.id].form == "ball"
+                                          || state.objects[loc.id].form == "box")
+               || (loc.rel == "inside" || loc.rel == "ontop")
+                                      && loc.id != "floor"
+                                      && state.objects[loc.id].size == "small"
+                                      && state.objects[obj].size    == "large"
+               || loc.rel == "ontop"  && state.objects[obj].form == "box"
+                                      && state.objects[obj].size == "small"
+                                      && loc.id != "floor"
+                                      && state.objects[loc.id].size == "small"
+                                      && (state.objects[loc.id].form == "pyramid"
+                                          || state.objects[loc.id].form == "brick")
+               || loc.rel == "ontop"  && state.objects[obj].form == "box"
+                                      && state.objects[obj].size == "large"
+                                      && loc.id != "floor"
+            && state.objects[loc.id].form == "pyramid"
+    }
     /**
     * Checks whether an object with the given id is in the world stacks or arm
     */
