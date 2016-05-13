@@ -185,36 +185,78 @@ module Interpreter {
         else if (obj.location) {
             var possible = interpretObject(obj.object, state);
             var pLocations = interpretLocation(obj.location, state);
-
+            var stacks = state.stacks;
             for(var candidate of possible ){
                 for(var l of pLocations.locations ){
                     switch(l.rel) {
                         case "inside":
-
-                         candidate =null;
+                            for(var currStack of stacks){
+                                var candidatePosition = currStack.indexOf(candidate);
+                                var objectPosition = currStack.indexOf(l.id);
+                                if (objectPosition < 0 || state.objects[l.id].form != "box") break;
+                                if(candidatePosition == objectPosition + 1){
+                                    res.push(candidate);
+                                }
+                            }
                         break;
                         case "above":
-                         candidate =null;
+                            for(var currStack of stacks){
+                                var candidatePosition = currStack.indexOf(candidate);
+                                var objectPosition = currStack.indexOf(l.id);
+                                if (objectPosition < 0) break;
+                                if(candidatePosition > objectPosition){
+                                    res.push(candidate);
+                                }
+                            }
                         break;
                         case "beside":
-                         candidate =null;
+                            var firstObjStack = 0;
+                            var secondObjStack = 0;
+                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
+                                if (stacks[firstObjStack].indexOf(candidate)>=0) break;
+                            }
+                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
+                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                            }
+                            if(Math.abs(firstObjStack - secondObjStack) == 1){
+                                res.push(candidate);
+                            }
                         break;
                         case "ontop":
-                         var stacks = state.stacks;
-                         for(var currStack of stacks){
-                             var candidatePosition = currStack.indexOf(candidate);
-                             var objectPosition = currStack.indexOf(l.id);
-                             if (objectPosition < 0) break;
-                             if(candidatePosition == objectPosition + 1){
-                                 res.push(candidate);
-                             }
-                         }
+                            for(var currStack of stacks){
+                                var candidatePosition = currStack.indexOf(candidate);
+                                var objectPosition = currStack.indexOf(l.id);
+                                if (objectPosition < 0) break;
+                                if(candidatePosition == objectPosition + 1){
+                                    res.push(candidate);
+                                }
+                            }
                         break;
                         case "leftof":
-                         candidate =null;
+                            var firstObjStack = 0;
+                            var secondObjStack = 0;
+                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0 ) break;
+                            }
+                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
+                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                            }
+                            if(firstObjStack<secondObjStack){
+                                res.push(candidate);
+                            }
                         break;
                         case "rightof":
-                         candidate =null;
+                            var firstObjStack = 0;
+                            var secondObjStack = 0;
+                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
+                                if (stacks[firstObjStack].indexOf(candidate)>=0) break;
+                            }
+                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
+                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                            }
+                            if(firstObjStack > secondObjStack){
+                                res.push(candidate);
+                            }
                         break;
                     }
                 }
@@ -243,6 +285,7 @@ module Interpreter {
         var rel = loc.relation;
         var ent = loc.entity;
         var candidates = interpretEntity(ent, state);
+
         for(let candidate of candidates){
             res.locations.push({rel: rel, id: candidate});
         }
