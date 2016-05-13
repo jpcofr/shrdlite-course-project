@@ -282,13 +282,6 @@ module Interpreter {
                     }
                 }
             }
-
-            // list of object ids
-
-            // locations: { rel: string; id: string }[];
-            // search state stack to find which objects in possible
-            // have relation loc.rel to the object loc.id for a
-            // location loc in plocations.
         }
 
         return res;
