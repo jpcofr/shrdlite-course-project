@@ -137,8 +137,17 @@ module Interpreter {
                 for(let loc of interpretLocation(cmd.location, state)) {
                     var obj = ent ? ent : state.holding;
 
+                    // some exceptions for impossible cases:
                     // we can't position an object in relation to itself
                     if(obj == loc.id){continue;}
+                    // balls can't go on top of things, they would roll off
+                    if(loc.rel == "ontop" && state.objects[obj].form == "ball"){continue;}
+                    if(loc.rel == "inside"){
+                        // objects can only go inside boxes
+                        if(state.objects[loc.id].form != "box"){continue;}
+                        // large objects can't go inside small boxes
+                        if(state.objects[loc.id].size == "small" && state.objects[obj].size == "large"){continue;}
+                    }
 
                     result.push( [ { polarity : true,
                                    relation : loc.rel,
