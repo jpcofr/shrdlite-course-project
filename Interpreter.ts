@@ -136,6 +136,8 @@ module Interpreter {
                 }
                 else {
                     var obj = ent ? ent : state.holding;
+
+                    // we can't position an object in relation to itself
                     if(obj == loc.id){continue;}
 
                     result.push( [ { polarity : true,
@@ -147,6 +149,18 @@ module Interpreter {
         }
 
         return result;
+    }
+
+    /**
+    * Checks whether an object with the given id is in the world stacks or arm
+    */
+    function existsObjectId(id: string, state: WorldState): boolean {
+        if(id == state.holding){return true;}
+        var stacks = state.stacks;
+        for (let stack of stacks){
+            if(stack.indexOf(id) >= 0){return true;}
+        }
+        return false;
     }
 
     /**
@@ -163,7 +177,8 @@ module Interpreter {
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
                         worldObjs[objId].color == obj.color &&
-                        worldObjs[objId].size == obj.size) {
+                        worldObjs[objId].size == obj.size &&
+                        existsObjectId(objId,state)) {
                         foundObjs.push(objId);
                     }
                 }
@@ -171,7 +186,8 @@ module Interpreter {
             else if (obj.size) { // Size known but not color
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
-                        worldObjs[objId].size == obj.size) {
+                        worldObjs[objId].size == obj.size &&
+                        existsObjectId(objId,state)) {
                         foundObjs.push(objId);
                     }
                 }
@@ -180,14 +196,16 @@ module Interpreter {
 
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
-                        worldObjs[objId].color == obj.color) {
+                        worldObjs[objId].color == obj.color &&
+                        existsObjectId(objId,state)) {
                         foundObjs.push(objId);
                     }
                 }
             }
             else { // Only form is known
                 for (var objId in state.objects) {
-                    if (state.objects[objId].form == obj.form) {
+                    if (state.objects[objId].form == obj.form &&
+                        existsObjectId(objId,state)) {
                         foundObjs.push(objId);
                     }
                 }
