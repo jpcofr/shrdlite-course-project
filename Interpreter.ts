@@ -73,12 +73,12 @@ module Interpreter {
          * literal {polarity: false, relation: "ontop", args:
          * ["a","b"]}.
          */
-        polarity : boolean;
+        polarity: boolean;
         /** The name of the relation in question. */
-        relation : string;
+        relation: string;
         /** The arguments to the relation. Usually these will be either objects
          * or special strings such as "floor" or "floor-N" (where N is a column) */
-        args : string[];
+        args: string[];
     }
 
     export function stringify(result: InterpretationResult): string {
@@ -99,10 +99,10 @@ module Interpreter {
      * The additional information that turns the original parse tree into
      * its augmented counterpart.
      */
-    type ObjectInfo   = string [];
-    type EntityInfo   = string [];
-    type LocationInfo = {rel: string; id: string} [];
-    type CommandInfo  = DNFFormula;
+    type ObjectInfo = string[];
+    type EntityInfo = string[];
+    type LocationInfo = { rel: string; id: string }[];
+    type CommandInfo = DNFFormula;
 
     /**
      * The core interpretation function. The code here is just a
@@ -131,15 +131,17 @@ module Interpreter {
         var location = interpretLocation(cmd.location, state);
 
         // Classify cmd.command
-        if (cmd.command == "take") { // Pick up entity.
-
-        } else if (cmd.command == "put") { // Put down entity.
-
-        } else if (cmd.command == "move") { // Move entity to location.
-
-        } else {
-
-        }
+        switch (cmd.command) {
+            case "take": // Pick up entity.
+                interpretation = [[{ polarity: true, relation: "holding", args: entity }]];
+                break;
+            case "put": // Put down entity.
+                interpretation = [[{ polarity: false, relation: "holding", args: entity }]];
+                break;
+            case "move": // Move entity to location.
+        		
+                break;
+       	}
 
         // Make DNFFormula from command/entity/location interpretation.
 
@@ -158,7 +160,7 @@ module Interpreter {
         if (obj.form) { // Basic case
             var worldObjs = state.objects;
 
-            if(obj.form == "floor"){foundObjs.push("floor");}
+            if (obj.form == "floor") { foundObjs.push("floor"); }
             if (obj.size && obj.color) { // No missing information
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
@@ -198,89 +200,89 @@ module Interpreter {
             var candidates = interpretObject(obj.object, state);
             var pLocations = interpretLocation(obj.location, state);
             var stacks = state.stacks;
-            for(var candidate of candidates ){
-                for(var location of pLocations ){
-                    switch(location.rel) {
+            for (var candidate of candidates) {
+                for (var location of pLocations) {
+                    switch (location.rel) {
                         case "inside":
-                            for(var currStack of stacks){
+                            for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(location.id);
                                 if (objectPosition < 0 ||
                                     state.objects[location.id].form != "box") break;
-                                if(candidatePosition == objectPosition + 1){
+                                if (candidatePosition == objectPosition + 1) {
                                     foundObjs.push(candidate);
                                 }
-                                if(candidatePosition == objectPosition + 2){
+                                if (candidatePosition == objectPosition + 2) {
                                     // nested boxes
                                     var between = currStack[objectPosition + 1];
-                                    if(state.objects[between].form == "box" &&
-                                       state.objects[between].size == "small" &&
-                                       state.objects[location.id].size == "large"){
+                                    if (state.objects[between].form == "box" &&
+                                        state.objects[between].size == "small" &&
+                                        state.objects[location.id].size == "large") {
                                         foundObjs.push(candidate);
                                     }
                                 }
                             }
-                        break;
+                            break;
                         case "above":
-                            for(var currStack of stacks){
+                            for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(location.id);
                                 // everything is above the floor
                                 if (objectPosition < 0 && location.id != "floor") break;
-                                if(candidatePosition > objectPosition){
+                                if (candidatePosition > objectPosition) {
                                     foundObjs.push(candidate);
                                 }
                             }
-                        break;
+                            break;
                         case "beside":
                             var firstObjStack = 0;
                             var secondObjStack = 0;
-                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
-                                if (stacks[firstObjStack].indexOf(candidate)>=0) break;
+                            for (firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++) {
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0) break;
                             }
-                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(location.id)>=0) break;
+                            for (secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++) {
+                                if (stacks[secondObjStack].indexOf(location.id) >= 0) break;
                             }
-                            if(Math.abs(firstObjStack - secondObjStack) == 1){
+                            if (Math.abs(firstObjStack - secondObjStack) == 1) {
                                 foundObjs.push(candidate);
                             }
-                        break;
+                            break;
                         case "ontop":
-                            for(var currStack of stacks){
+                            for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(location.id);
                                 if (objectPosition < 0 && location.id != "floor") break;
-                                if(candidatePosition == objectPosition + 1){
+                                if (candidatePosition == objectPosition + 1) {
                                     foundObjs.push(candidate);
                                 }
                             }
-                        break;
+                            break;
                         case "leftof":
                             var firstObjStack = 0;
                             var secondObjStack = 0;
-                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
-                                if (stacks[firstObjStack].indexOf(candidate) >= 0 ) break;
+                            for (firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++) {
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0) break;
                             }
-                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(location.id)>=0) break;
+                            for (secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++) {
+                                if (stacks[secondObjStack].indexOf(location.id) >= 0) break;
                             }
-                            if(firstObjStack<secondObjStack){
+                            if (firstObjStack < secondObjStack) {
                                 foundObjs.push(candidate);
                             }
-                        break;
+                            break;
                         case "rightof":
                             var firstObjStack = 0;
                             var secondObjStack = 0;
-                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
-                                if (stacks[firstObjStack].indexOf(candidate)>=0) break;
+                            for (firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++) {
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0) break;
                             }
-                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(location.id)>=0) break;
+                            for (secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++) {
+                                if (stacks[secondObjStack].indexOf(location.id) >= 0) break;
                             }
-                            if(firstObjStack > secondObjStack){
+                            if (firstObjStack > secondObjStack) {
                                 foundObjs.push(candidate);
                             }
-                        break;
+                            break;
                     }
                 }
             }
@@ -296,10 +298,10 @@ module Interpreter {
 
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
         // gets objects from interpretEntity and pairs them with the input relation
-        var result : LocationInfo = [];
+        var result: LocationInfo = [];
 
-        for(let candidate of interpretEntity(loc.entity, state)) {
-            result.push({rel: loc.relation, id: candidate});
+        for (let candidate of interpretEntity(loc.entity, state)) {
+            result.push({ rel: loc.relation, id: candidate });
         }
 
         return result;
