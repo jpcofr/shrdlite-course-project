@@ -42,7 +42,9 @@ module Interpreter {
             try {
                 var result: InterpretationResult = <InterpretationResult>parseresult;
                 result.interpretation = interpretCommand(result.parse, currentState);
-                interpretations.push(result);
+                if(result.interpretation.length>0){
+                    interpretations.push(result);
+                }
             } catch (err) {
                 errors.push(err);
             }
@@ -159,7 +161,7 @@ module Interpreter {
                 }
             }
         }
-        if (result.length == 0) { result = null; }
+        
         return result;
     }
 
