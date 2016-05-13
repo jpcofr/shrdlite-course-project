@@ -18,8 +18,8 @@
 * interpreted as the literal ontop(a,b). More complex goals can be
 * written using conjunctions and disjunctions of these literals.
 *
-* In general, the module can take a list of possible parses and return
-* a list of possible interpretations, but the code to handle this has
+* In general, the module can take a list of candidates parses and return
+* a list of candidates interpretations, but the code to handle this has
 * already been written for you. The only part you need to implement is
 * the core interpretation function, namely `interpretCommand`, which produces a
 * single interpretation for a single command.
@@ -30,7 +30,7 @@ module Interpreter {
     // exported functions, classes and interfaces/types
 
     /**
-    Top-level function for the Interpreter. It calls `interpretCommand` for each possible parse of the command. No need to change this one.
+    Top-level function for the Interpreter. It calls `interpretCommand` for each candidates parse of the command. No need to change this one.
     * @param parses List of parses produced by the Parser.
     * @param currentState The current state of the world.
     * @returns Augments ParseResult with a list of interpretations. Each interpretation is represented by a list of Literals.
@@ -73,12 +73,12 @@ module Interpreter {
          * literal {polarity: false, relation: "ontop", args:
          * ["a","b"]}.
          */
-        polarity : boolean;
+        polarity: boolean;
         /** The name of the relation in question. */
-        relation : string;
+        relation: string;
         /** The arguments to the relation. Usually these will be either objects
          * or special strings such as "floor" or "floor-N" (where N is a column) */
-        args : string[];
+        args: string[];
     }
 
     export function stringify(result: InterpretationResult): string {
@@ -99,10 +99,10 @@ module Interpreter {
      * The additional information that turns the original parse tree into
      * its augmented counterpart.
      */
-    type ObjectInfo   = string [];
-    type EntityInfo   = string [];
-    type LocationInfo = {rel: string; id: string} [];
-    type CommandInfo  = DNFFormula;
+    type ObjectInfo = string[];
+    type EntityInfo = string[];
+    type LocationInfo = { rel: string; id: string }[];
+    type CommandInfo = DNFFormula;
 
     /**
      * The core interpretation function. The code here is just a
@@ -153,146 +153,141 @@ module Interpreter {
     */
     function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
 
-        var res: string[] = [];
+        var foundObjs: string[] = [];
         // TODO : refactor this case, try to make it less copy-pasty!
-        // (should be possible using filter)
+        // (should be candidates using filter)
         if (obj.form) { // Basic case
-            var obList = state.objects;
-            var f = obj.form;
-            if(f == "floor"){res.push("floor");}
+            var worldObjs = state.objects;
+
+            if (obj.form == "floor") { foundObjs.push("floor"); }
             if (obj.size && obj.color) { // No missing information
-                var c = obj.color;
-                var s = obj.size;
-                for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].color == c && obList[key].size == s) {
-                        res.push(key);
+                for (var objId in state.objects) {
+                    if (worldObjs[objId].form == obj.form &&
+                        worldObjs[objId].color == obj.color &&
+                        worldObjs[objId].size == obj.size) {
+                        foundObjs.push(objId);
                     }
                 }
             }
             else if (obj.size) { // Size known but not color
-                var s = obj.size;
-                for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].size == s) {
-                        res.push(key);
+                for (var objId in state.objects) {
+                    if (worldObjs[objId].form == obj.form &&
+                        worldObjs[objId].size == obj.size) {
+                        foundObjs.push(objId);
                     }
                 }
             }
             else if (obj.color) { // Color known but not size
-                var c = obj.color;
-                for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].color == c) {
-                        res.push(key);
+
+                for (var objId in state.objects) {
+                    if (worldObjs[objId].form == obj.form &&
+                        worldObjs[objId].color == obj.color) {
+                        foundObjs.push(objId);
                     }
                 }
             }
             else { // Only form is known
-                for (var key in state.objects) {
-                    if (state.objects[key].form == obj.form) {
-                        res.push(key);
+                for (var objId in state.objects) {
+                    if (state.objects[objId].form == obj.form) {
+                        foundObjs.push(objId);
                     }
                 }
             }
         }
 
         else if (obj.location) {
-            var possible = interpretObject(obj.object, state);
+            var candidates = interpretObject(obj.object, state);
             var pLocations = interpretLocation(obj.location, state);
             var stacks = state.stacks;
-            for(var candidate of possible ){
-                for(var l of pLocations ){
-                    switch(l.rel) {
+            for (var candidate of candidates) {
+                for (var location of pLocations) {
+                    switch (location.rel) {
                         case "inside":
-                            for(var currStack of stacks){
+                            for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(l.id);
-                                if (objectPosition < 0 || state.objects[l.id].form != "box") break;
-                                if(candidatePosition == objectPosition + 1){
-                                    res.push(candidate);
+                                var objectPosition = currStack.indexOf(location.id);
+                                if (objectPosition < 0 ||
+                                    state.objects[location.id].form != "box") break;
+                                if (candidatePosition == objectPosition + 1) {
+                                    foundObjs.push(candidate);
                                 }
-                                if(candidatePosition == objectPosition + 2){
+                                if (candidatePosition == objectPosition + 2) {
                                     // nested boxes
                                     var between = currStack[objectPosition + 1];
-                                    if(state.objects[between].form == "box" &&
-                                       state.objects[between].size == "small" &&
-                                       state.objects[l.id].size == "large"){
-                                        res.push(candidate);
+                                    if (state.objects[between].form == "box" &&
+                                        state.objects[between].size == "small" &&
+                                        state.objects[location.id].size == "large") {
+                                        foundObjs.push(candidate);
                                     }
                                 }
                             }
-                        break;
+                            break;
                         case "above":
-                            for(var currStack of stacks){
+                            for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(l.id);
+                                var objectPosition = currStack.indexOf(location.id);
                                 // everything is above the floor
-                                if (objectPosition < 0 && l.id != "floor") break;
-                                if(candidatePosition > objectPosition){
-                                    res.push(candidate);
+                                if (objectPosition < 0 && location.id != "floor") break;
+                                if (candidatePosition > objectPosition) {
+                                    foundObjs.push(candidate);
                                 }
                             }
-                        break;
+                            break;
                         case "beside":
                             var firstObjStack = 0;
                             var secondObjStack = 0;
-                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
-                                if (stacks[firstObjStack].indexOf(candidate)>=0) break;
+                            for (firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++) {
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0) break;
                             }
-                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                            for (secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++) {
+                                if (stacks[secondObjStack].indexOf(location.id) >= 0) break;
                             }
-                            if(Math.abs(firstObjStack - secondObjStack) == 1){
-                                res.push(candidate);
+                            if (Math.abs(firstObjStack - secondObjStack) == 1) {
+                                foundObjs.push(candidate);
                             }
-                        break;
+                            break;
                         case "ontop":
-                            for(var currStack of stacks){
+                            for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(l.id);
-                                if (objectPosition < 0 && l.id != "floor") break;
-                                if(candidatePosition == objectPosition + 1){
-                                    res.push(candidate);
+                                var objectPosition = currStack.indexOf(location.id);
+                                if (objectPosition < 0 && location.id != "floor") break;
+                                if (candidatePosition == objectPosition + 1) {
+                                    foundObjs.push(candidate);
                                 }
                             }
-                        break;
+                            break;
                         case "leftof":
                             var firstObjStack = 0;
                             var secondObjStack = 0;
-                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
-                                if (stacks[firstObjStack].indexOf(candidate) >= 0 ) break;
+                            for (firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++) {
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0) break;
                             }
-                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                            for (secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++) {
+                                if (stacks[secondObjStack].indexOf(location.id) >= 0) break;
                             }
-                            if(firstObjStack<secondObjStack){
-                                res.push(candidate);
+                            if (firstObjStack < secondObjStack) {
+                                foundObjs.push(candidate);
                             }
-                        break;
+                            break;
                         case "rightof":
                             var firstObjStack = 0;
                             var secondObjStack = 0;
-                            for(firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++){
-                                if (stacks[firstObjStack].indexOf(candidate)>=0) break;
+                            for (firstObjStack = 0; firstObjStack < stacks.length; firstObjStack++) {
+                                if (stacks[firstObjStack].indexOf(candidate) >= 0) break;
                             }
-                            for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                            for (secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++) {
+                                if (stacks[secondObjStack].indexOf(location.id) >= 0) break;
                             }
-                            if(firstObjStack > secondObjStack){
-                                res.push(candidate);
+                            if (firstObjStack > secondObjStack) {
+                                foundObjs.push(candidate);
                             }
-                        break;
+                            break;
                     }
                 }
             }
-
-            // list of object ids
-
-            // locations: { rel: string; id: string }[];
-            // search state stack to find which objects in possible
-            // have relation loc.rel to the object loc.id for a
-            // location loc in plocations.
         }
 
-        return res;
+        return foundObjs;
     }
 
     function interpretEntity(ent: Parser.Entity, state: WorldState): EntityInfo {
@@ -302,10 +297,10 @@ module Interpreter {
 
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
         // gets objects from interpretEntity and pairs them with the input relation
-        var result : LocationInfo = [];
+        var result: LocationInfo = [];
 
-        for(let candidate of interpretEntity(loc.entity, state)) {
-            result.push({rel: loc.relation, id: candidate});
+        for (let candidate of interpretEntity(loc.entity, state)) {
+            result.push({ rel: loc.relation, id: candidate });
         }
 
         return result;
