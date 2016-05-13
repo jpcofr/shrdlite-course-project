@@ -119,7 +119,7 @@ module Interpreter {
         // Classify entity and location, determine the corresponding World objects.
         var entity = interpretEntity(cmd.entity, state);
         var location = interpretLocation(cmd.location, state);
-        
+
         // Classify cmd.command
         if (cmd.command == "take") { // Pick up entity.
 
@@ -130,9 +130,9 @@ module Interpreter {
         } else {
 
         }
-        
+
         // Make DNFFormula from command/entity/location interpretation.
-        
+
 
         return interpretation;
     }
@@ -184,8 +184,44 @@ module Interpreter {
 
         else if (obj.location) {
             var possible = interpretObject(obj.object, state);
+            var pLocations = interpretLocation(obj.location, state);
+
+            for(var candidate of possible ){
+                for(var l of pLocations.locations ){
+                    switch(l.rel) {
+                        case "inside":
+
+                         candidate =null;
+                        break;
+                        case "above":
+                         candidate =null;
+                        break;
+                        case "beside":
+                         candidate =null;
+                        break;
+                        case "ontop":
+                         var stacks = state.stacks;
+                         for(var currStack of stacks){
+                             var candidatePosition = currStack.indexOf(candidate);
+                             var objectPosition = currStack.indexOf(l.id);
+                             if (objectPosition < 0) break;
+                             if(candidatePosition == objectPosition + 1){
+                                 res.push(candidate);
+                             }
+                         }
+                        break;
+                        case "leftof":
+                         candidate =null;
+                        break;
+                        case "rightof":
+                         candidate =null;
+                        break;
+                    }
+                }
+            }
+
             // list of object ids
-            var plocations = interpretLocation(obj.location, state);
+
             // locations: { rel: string; id: string }[];
             // search state stack to find which objects in possible
             // have relation loc.rel to the object loc.id for a
@@ -203,6 +239,8 @@ module Interpreter {
 
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
         var res: LocationInfo = { locations: [] };
+
+
         return res;
     }
 
