@@ -159,7 +159,7 @@ module Interpreter {
                 }
             }
         }
-
+        if (result.length == 0) { result = null; }
         return result;
     }
 
