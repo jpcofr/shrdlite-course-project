@@ -73,12 +73,12 @@ module Interpreter {
          * literal {polarity: false, relation: "ontop", args:
          * ["a","b"]}.
          */
-        polarity: boolean;
+        polarity : boolean;
         /** The name of the relation in question. */
-        relation: string;
+        relation : string;
         /** The arguments to the relation. Usually these will be either objects
-           * or special strings such as "floor" or "floor-N" (where N is a column) */
-        args: string[];
+         * or special strings such as "floor" or "floor-N" (where N is a column) */
+        args : string[];
     }
 
     export function stringify(result: InterpretationResult): string {
