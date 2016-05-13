@@ -18,8 +18,8 @@
 * interpreted as the literal ontop(a,b). More complex goals can be
 * written using conjunctions and disjunctions of these literals.
 *
-* In general, the module can take a list of possible parses and return
-* a list of possible interpretations, but the code to handle this has
+* In general, the module can take a list of candidates parses and return
+* a list of candidates interpretations, but the code to handle this has
 * already been written for you. The only part you need to implement is
 * the core interpretation function, namely `interpretCommand`, which produces a
 * single interpretation for a single command.
@@ -30,7 +30,7 @@ module Interpreter {
     // exported functions, classes and interfaces/types
 
     /**
-    Top-level function for the Interpreter. It calls `interpretCommand` for each possible parse of the command. No need to change this one.
+    Top-level function for the Interpreter. It calls `interpretCommand` for each candidates parse of the command. No need to change this one.
     * @param parses List of parses produced by the Parser.
     * @param currentState The current state of the world.
     * @returns Augments ParseResult with a list of interpretations. Each interpretation is represented by a list of Literals.
@@ -152,69 +152,71 @@ module Interpreter {
     */
     function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
 
-        var res: string[] = [];
+        var foundObjs: string[] = [];
         // TODO : refactor this case, try to make it less copy-pasty!
-        // (should be possible using filter)
+        // (should be candidates using filter)
         if (obj.form) { // Basic case
-            var obList = state.objects;
-            var f = obj.form;
-            if(f == "floor"){res.push("floor");}
+            var worldObjs = state.objects;
+
+            if(obj.form == "floor"){foundObjs.push("floor");}
             if (obj.size && obj.color) { // No missing information
-                var c = obj.color;
-                var s = obj.size;
-                for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].color == c && obList[key].size == s) {
-                        res.push(key);
+                for (var objId in state.objects) {
+                    if (worldObjs[objId].form == obj.form &&
+                        worldObjs[objId].color == obj.color &&
+                        worldObjs[objId].size == obj.size) {
+                        foundObjs.push(objId);
                     }
                 }
             }
             else if (obj.size) { // Size known but not color
-                var s = obj.size;
-                for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].size == s) {
-                        res.push(key);
+                for (var objId in state.objects) {
+                    if (worldObjs[objId].form == obj.form &&
+                        worldObjs[objId].size == obj.size) {
+                        foundObjs.push(objId);
                     }
                 }
             }
             else if (obj.color) { // Color known but not size
-                var c = obj.color;
-                for (var key in state.objects) {
-                    if (obList[key].form == f && obList[key].color == c) {
-                        res.push(key);
+
+                for (var objId in state.objects) {
+                    if (worldObjs[objId].form == obj.form &&
+                        worldObjs[objId].color == obj.color) {
+                        foundObjs.push(objId);
                     }
                 }
             }
             else { // Only form is known
-                for (var key in state.objects) {
-                    if (state.objects[key].form == obj.form) {
-                        res.push(key);
+                for (var objId in state.objects) {
+                    if (state.objects[objId].form == obj.form) {
+                        foundObjs.push(objId);
                     }
                 }
             }
         }
 
         else if (obj.location) {
-            var possible = interpretObject(obj.object, state);
+            var candidates = interpretObject(obj.object, state);
             var pLocations = interpretLocation(obj.location, state);
             var stacks = state.stacks;
-            for(var candidate of possible ){
-                for(var l of pLocations ){
-                    switch(l.rel) {
+            for(var candidate of candidates ){
+                for(var location of pLocations ){
+                    switch(location.rel) {
                         case "inside":
                             for(var currStack of stacks){
                                 var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(l.id);
-                                if (objectPosition < 0 || state.objects[l.id].form != "box") break;
+                                var objectPosition = currStack.indexOf(location.id);
+                                if (objectPosition < 0 ||
+                                    state.objects[location.id].form != "box") break;
                                 if(candidatePosition == objectPosition + 1){
-                                    res.push(candidate);
+                                    foundObjs.push(candidate);
                                 }
                                 if(candidatePosition == objectPosition + 2){
                                     // nested boxes
                                     var between = currStack[objectPosition + 1];
                                     if(state.objects[between].form == "box" &&
                                        state.objects[between].size == "small" &&
-                                       state.objects[l.id].size == "large"){
-                                        res.push(candidate);
+                                       state.objects[location.id].size == "large"){
+                                        foundObjs.push(candidate);
                                     }
                                 }
                             }
@@ -222,11 +224,11 @@ module Interpreter {
                         case "above":
                             for(var currStack of stacks){
                                 var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(l.id);
+                                var objectPosition = currStack.indexOf(location.id);
                                 // everything is above the floor
-                                if (objectPosition < 0 && l.id != "floor") break;
+                                if (objectPosition < 0 && location.id != "floor") break;
                                 if(candidatePosition > objectPosition){
-                                    res.push(candidate);
+                                    foundObjs.push(candidate);
                                 }
                             }
                         break;
@@ -237,19 +239,19 @@ module Interpreter {
                                 if (stacks[firstObjStack].indexOf(candidate)>=0) break;
                             }
                             for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                                if (stacks[secondObjStack].indexOf(location.id)>=0) break;
                             }
                             if(Math.abs(firstObjStack - secondObjStack) == 1){
-                                res.push(candidate);
+                                foundObjs.push(candidate);
                             }
                         break;
                         case "ontop":
                             for(var currStack of stacks){
                                 var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(l.id);
-                                if (objectPosition < 0 && l.id != "floor") break;
+                                var objectPosition = currStack.indexOf(location.id);
+                                if (objectPosition < 0 && location.id != "floor") break;
                                 if(candidatePosition == objectPosition + 1){
-                                    res.push(candidate);
+                                    foundObjs.push(candidate);
                                 }
                             }
                         break;
@@ -260,10 +262,10 @@ module Interpreter {
                                 if (stacks[firstObjStack].indexOf(candidate) >= 0 ) break;
                             }
                             for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                                if (stacks[secondObjStack].indexOf(location.id)>=0) break;
                             }
                             if(firstObjStack<secondObjStack){
-                                res.push(candidate);
+                                foundObjs.push(candidate);
                             }
                         break;
                         case "rightof":
@@ -273,10 +275,10 @@ module Interpreter {
                                 if (stacks[firstObjStack].indexOf(candidate)>=0) break;
                             }
                             for(secondObjStack = 0; secondObjStack < stacks.length; secondObjStack++){
-                                if (stacks[secondObjStack].indexOf(l.id)>=0) break;
+                                if (stacks[secondObjStack].indexOf(location.id)>=0) break;
                             }
                             if(firstObjStack > secondObjStack){
-                                res.push(candidate);
+                                foundObjs.push(candidate);
                             }
                         break;
                     }
@@ -284,7 +286,7 @@ module Interpreter {
             }
         }
 
-        return res;
+        return foundObjs;
     }
 
     function interpretEntity(ent: Parser.Entity, state: WorldState): EntityInfo {
