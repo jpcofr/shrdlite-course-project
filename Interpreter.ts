@@ -148,6 +148,7 @@ module Interpreter {
         if (obj.form) { // Basic case
             var obList = state.objects;
             var f = obj.form;
+            if(f == "floor"){res.push("floor");}
             if (obj.size && obj.color) { // No missing information
                 var c = obj.color;
                 var s = obj.size;
@@ -197,13 +198,23 @@ module Interpreter {
                                 if(candidatePosition == objectPosition + 1){
                                     res.push(candidate);
                                 }
+                                if(candidatePosition == objectPosition + 2){
+                                    // nested boxes
+                                    var between = currStack[objectPosition + 1];
+                                    if(state.objects[between].form == "box" &&
+                                       state.objects[between].size == "small" &&
+                                       state.objects[l.id].size == "large"){
+                                        res.push(candidate);
+                                    }
+                                }
                             }
                         break;
                         case "above":
                             for(var currStack of stacks){
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(l.id);
-                                if (objectPosition < 0) break;
+                                // everything is above the floor
+                                if (objectPosition < 0 && l.id != "floor") break;
                                 if(candidatePosition > objectPosition){
                                     res.push(candidate);
                                 }
@@ -226,7 +237,7 @@ module Interpreter {
                             for(var currStack of stacks){
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(l.id);
-                                if (objectPosition < 0) break;
+                                if (objectPosition < 0 && l.id != "floor") break;
                                 if(candidatePosition == objectPosition + 1){
                                     res.push(candidate);
                                 }
