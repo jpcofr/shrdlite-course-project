@@ -50,7 +50,7 @@ module Interpreter {
         if (interpretations.length) {
             return interpretations;
         } else {
-              // only throw the first error found
+            // only throw the first error found
             throw errors[0];
         }
     }
@@ -125,33 +125,37 @@ module Interpreter {
         //            { polarity: true, relation: "holding", args: [b] }
         //        ]];
 
-        var result : CommandInfo = [];
+        var result: CommandInfo = [];
 
-        for(let ent of interpretEntity(cmd.entity, state)) {
-            if(cmd.command == "take") {
-                result.push( [ { polarity : true,
-                                relation : "holding",
-                                args : [ent] } ] );
+        for (let ent of interpretEntity(cmd.entity, state)) {
+            if (cmd.command == "take") {
+                result.push([{
+                    polarity: true,
+                    relation: "holding",
+                    args: [ent]
+                }]);
             }
             else {
-                for(let loc of interpretLocation(cmd.location, state)) {
+                for (let loc of interpretLocation(cmd.location, state)) {
                     var obj = ent ? ent : state.holding;
 
                     // some exceptions for impossible cases:
                     // we can't position an object in relation to itself
-                    if(obj == loc.id){continue;}
+                    if (obj == loc.id) { continue; }
                     // balls can't go on top of things, they would roll off
-                    if(loc.rel == "ontop" && state.objects[obj].form == "ball"){continue;}
-                    if(loc.rel == "inside"){
+                    if (loc.rel == "ontop" && state.objects[obj].form == "ball") { continue; }
+                    if (loc.rel == "inside") {
                         // objects can only go inside boxes
-                        if(state.objects[loc.id].form != "box"){continue;}
+                        if (state.objects[loc.id].form != "box") { continue; }
                         // large objects can't go inside small boxes
-                        if(state.objects[loc.id].size == "small" && state.objects[obj].size == "large"){continue;}
+                        if (state.objects[loc.id].size == "small" && state.objects[obj].size == "large") { continue; }
                     }
 
-                    result.push( [ { polarity : true,
-                                   relation : loc.rel,
-                                   args : [obj, loc.id] } ] );
+                    result.push([{
+                        polarity: true,
+                        relation: loc.rel,
+                        args: [obj, loc.id]
+                    }]);
                 }
             }
         }
@@ -163,10 +167,10 @@ module Interpreter {
     * Checks whether an object with the given id is in the world stacks or arm
     */
     function existsObjectId(id: string, state: WorldState): boolean {
-        if(id == state.holding){return true;}
+        if (id == state.holding) { return true; }
         var stacks = state.stacks;
-        for (let stack of stacks){
-            if(stack.indexOf(id) >= 0){return true;}
+        for (let stack of stacks) {
+            if (stack.indexOf(id) >= 0) { return true; }
         }
         return false;
     }
@@ -175,18 +179,26 @@ module Interpreter {
     * Returns the list of strings representing the relevant objects
     */
     function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
-
         var foundObjs: string[] = [];
         if (obj.form) { // Basic case
             var worldObjs = state.objects;
 
             if (obj.form == "floor") { foundObjs.push("floor"); }
+            if (obj.form == "anyform") { // needs to be a form that can be taken
+                for (var objId in state.objects) {
+
+                    if (state.objects[objId].form == "ball" ||
+                        state.objects[objId].form == "table" ||
+                        state.objects[objId].form == "box")
+                        foundObjs.push(objId);
+                }
+            }
             if (obj.size && obj.color) { // No missing information
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
                         worldObjs[objId].color == obj.color &&
                         worldObjs[objId].size == obj.size &&
-                        existsObjectId(objId,state)) {
+                        existsObjectId(objId, state)) {
                         foundObjs.push(objId);
                     }
                 }
@@ -195,7 +207,7 @@ module Interpreter {
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
                         worldObjs[objId].size == obj.size &&
-                        existsObjectId(objId,state)) {
+                        existsObjectId(objId, state)) {
                         foundObjs.push(objId);
                     }
                 }
@@ -205,7 +217,7 @@ module Interpreter {
                 for (var objId in state.objects) {
                     if (worldObjs[objId].form == obj.form &&
                         worldObjs[objId].color == obj.color &&
-                        existsObjectId(objId,state)) {
+                        existsObjectId(objId, state)) {
                         foundObjs.push(objId);
                     }
                 }
@@ -213,7 +225,7 @@ module Interpreter {
             else { // Only form is known
                 for (var objId in state.objects) {
                     if (state.objects[objId].form == obj.form &&
-                        existsObjectId(objId,state)) {
+                        existsObjectId(objId, state)) {
                         foundObjs.push(objId);
                     }
                 }
@@ -228,7 +240,7 @@ module Interpreter {
                 for (var location of pLocations) {
                     // the possible relations cannot refer to an object's location in
                     // relation to itself
-                    if(candidate == location.id){continue;}
+                    if (candidate == location.id) { continue; }
                     switch (location.rel) {
                         case "inside":
                             for (var currStack of stacks) {
