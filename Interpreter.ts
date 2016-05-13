@@ -191,6 +191,8 @@ module Interpreter {
                     if ((state.objects[objId].form == "ball" ||
                         state.objects[objId].form == "table" ||
                         state.objects[objId].form == "box") &&
+                        (state.objects[objId].color == obj.color)
+                        &&
                         existsObjectId(objId, state)) {
                         foundObjs.push(objId);
                     }
