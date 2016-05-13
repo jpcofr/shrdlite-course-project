@@ -126,7 +126,6 @@ module Interpreter {
         //            { polarity: true, relation: "ontop", args: [a, "floor"] },
         //            { polarity: true, relation: "holding", args: [b] }
         //        ]];
-
         var result: CommandInfo = [];
 
         if (cmd.command == "take") {
@@ -135,19 +134,29 @@ module Interpreter {
           }
         }
         else { // command is either "put" or "move"
-          for (let ent of interpretEntity(cmd.entity, state)) {
-            for (let loc of interpretLocation(cmd.location, state)) {
-              var obj = ent ? ent : state.holding;
+            for (let ent of interpretEntity(cmd.entity, state)) {
+              for (let loc of interpretLocation(cmd.location, state)) {
+                  var obj = ent ? ent : state.holding; //TODO: need to handle missing entity outside of entity loop
 
-              if (  obj == loc.id
-                 || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
-                                        && state.objects[obj].form    != "floor"
-                 || loc.rel == "inside" && state.objects[loc.id].form != "box"
-                 || loc.rel == "inside" && state.objects[loc.id].size == "small"
-                                        && state.objects[obj].size    == "large") {
-                continue;
-              }
-              result.push([{polarity: true, relation: loc.rel, args: [obj, loc.id]}]);
+                  // TODO: handle all possible physical laws
+                  if (  obj == loc.id
+                        || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
+                                               && loc.id    != "floor"
+                        || loc.rel == "inside" && state.objects[loc.id].form != "box"
+                        || loc.rel == "inside" && state.objects[loc.id].size == "small"
+                                               && state.objects[obj].size    == "large") {
+                     continue;
+                  }
+                  var newResult : Literal = {polarity: true, relation: loc.rel, args: [obj, loc.id]}
+                  var alreadyFound : boolean = false;
+                  for(let conj of result){
+                      for(let lit of conj){
+                          if(stringifyLiteral(lit) == stringifyLiteral(newResult)){
+                              alreadyFound = true;
+                          }
+                      }
+                  }
+                  if(!alreadyFound){result.push([newResult]);}
             }
           }
         }
@@ -175,7 +184,9 @@ module Interpreter {
         if (obj.form) { // Basic case
             var worldObjs = state.objects;
 
-            if (obj.form == "floor") { foundObjs.push("floor"); }
+            if (obj.form == "floor") {
+                foundObjs.push("floor");
+            }
 
             if (obj.form == "anyform") { // needs to be a form that can be taken
                 for (var objId in state.objects) {
@@ -226,7 +237,7 @@ module Interpreter {
             }
         }
 
-        else if (obj.location) {
+        if (obj.location) {
             var candidates = interpretObject(obj.object, state);
             var pLocations = interpretLocation(obj.location, state);
             var stacks = state.stacks;
@@ -237,31 +248,32 @@ module Interpreter {
                     if (candidate == location.id) { continue; }
                     switch (location.rel) {
                         case "inside":
-                            for (var currStack of stacks) {
-                                var candidatePosition = currStack.indexOf(candidate);
-                                var objectPosition = currStack.indexOf(location.id);
-                                if (objectPosition < 0 ||
-                                    state.objects[location.id].form != "box") break;
-                                if (candidatePosition == objectPosition + 1) {
+                        for (let currStack of stacks) {
+                            var candidatePosition = currStack.indexOf(candidate);
+                            var objectPosition = currStack.indexOf(location.id);
+
+                            if (objectPosition < 0 ||
+                                state.objects[location.id].form != "box") continue;
+                            if (candidatePosition == objectPosition + 1) {
+                                foundObjs.push(candidate);
+                            }
+                            if (candidatePosition == objectPosition + 2) {
+                                // nested boxes
+                                var between = currStack[objectPosition + 1];
+                                if (state.objects[between].form == "box" &&
+                                    state.objects[between].size == "small" &&
+                                    state.objects[location.id].size == "large") {
                                     foundObjs.push(candidate);
                                 }
-                                if (candidatePosition == objectPosition + 2) {
-                                    // nested boxes
-                                    var between = currStack[objectPosition + 1];
-                                    if (state.objects[between].form == "box" &&
-                                        state.objects[between].size == "small" &&
-                                        state.objects[location.id].size == "large") {
-                                        foundObjs.push(candidate);
-                                    }
-                                }
-                            }
-                            break;
+                          }
+                        }
+                        break;
                         case "above":
                             for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(location.id);
                                 // everything is above the floor
-                                if (objectPosition < 0 && location.id != "floor") break;
+                                if (objectPosition < 0 && location.id != "floor") continue;
                                 if (candidatePosition > objectPosition) {
                                     foundObjs.push(candidate);
                                 }
@@ -284,7 +296,7 @@ module Interpreter {
                             for (var currStack of stacks) {
                                 var candidatePosition = currStack.indexOf(candidate);
                                 var objectPosition = currStack.indexOf(location.id);
-                                if (objectPosition < 0 && location.id != "floor") break;
+                                if (objectPosition < 0 && location.id != "floor") continue;
                                 if (candidatePosition == objectPosition + 1) {
                                     foundObjs.push(candidate);
                                 }
@@ -332,7 +344,6 @@ module Interpreter {
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
         // gets objects from interpretEntity and pairs them with the input relation
         var result: LocationInfo = [];
-
         for (let candidate of interpretEntity(loc.entity, state)) {
             result.push({ rel: loc.relation, id: candidate });
         }
