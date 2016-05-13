@@ -50,7 +50,7 @@ module Interpreter {
         if (interpretations.length) {
             return interpretations;
         } else {
-            // only throw the first error found
+              // only throw the first error found
             throw errors[0];
         }
     }
@@ -125,26 +125,27 @@ module Interpreter {
         //            { polarity: true, relation: "holding", args: [b] }
         //        ]];
 
-        var interpretation: DNFFormula;
-        // Classify entity and location, determine the corresponding World objects.
-        var entity = interpretEntity(cmd.entity, state);
-        var location = interpretLocation(cmd.location, state);
+        var result : CommandInfo = [];
 
-        // Classify cmd.command
-        if (cmd.command == "take") { // Pick up entity.
+        for(let loc of interpretLocation(cmd.location, state)) {
+            for(let ent of interpretEntity(cmd.entity, state)) {
+                if(cmd.command == "take") {
+                  result.push( [ { polarity : true,
+                                   relation : "holding",
+                                   args : [ent] } ] );
+                }
+                else {
+                  var obj = ent ? ent : state.holding;
 
-        } else if (cmd.command == "put") { // Put down entity.
+                  result.push( [ { polarity : true,
+                                   relation : loc.rel,
+                                   args : [obj, loc.id] } ] );
 
-        } else if (cmd.command == "move") { // Move entity to location.
-
-        } else {
-
+                }
+            }
         }
 
-        // Make DNFFormula from command/entity/location interpretation.
-
-
-        return interpretation;
+        return result;
     }
 
     /**
