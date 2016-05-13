@@ -119,7 +119,7 @@ module Interpreter {
         // Classify entity and location, determine the corresponding World objects.
         var entity = interpretEntity(cmd.entity, state);
         var location = interpretLocation(cmd.location, state);
-        
+
         // Classify cmd.command
         if (cmd.command == "take") { // Pick up entity.
 
@@ -130,9 +130,9 @@ module Interpreter {
         } else {
 
         }
-        
+
         // Make DNFFormula from command/entity/location interpretation.
-        
+
 
         return interpretation;
     }
@@ -195,26 +195,35 @@ module Interpreter {
         return res;
     }
 
-    function interpretEntity(ent: Parser.Entity, state: WorldState): ObjectInfo {
+    function interpretEntity(ent: Parser.Entity, state: WorldState): string[] {
         // calls interpretObject, more complex quantifier handling can be added later
-        var res: ObjectInfo
+        var res : string[] = [];
         return res;
     }
 
     function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
+        // location contains relation and entity
         var res: LocationInfo = { locations: [] };
-        return res;
-    }
+        var rel = loc.relation;
+        var ent = loc.entity;
+        var candidates = interpretEntity(ent, state);
+        for(let candidate of candidates){
+            res.locations.push({rel: rel, id: candidate});
 
-    class ObjectInfo {
-        objects: { id: string; row: number; col: number }[];
+        }
+        return res;
     }
 
     class LocationInfo {
         locations: { rel: string; id: string }[];
     }
 
-    /*class ObjectMap {
+    /*
+    class ObjectInfo {
+        objects: { id: string; row: number; col: number }[];
+    }
+
+    class ObjectMap {
         coords : { [id : string] : {row : number; col : number}};
     }*/
 }
