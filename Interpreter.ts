@@ -101,48 +101,49 @@ module Interpreter {
     // Comparators
 
     function compareLiteral(l1 : Literal, l2 :Literal) : number {
-      return stringifyLiteral(l1).localeCompare(stringifyLiteral(l2));
+        return stringifyLiteral(l1).localeCompare(stringifyLiteral(l2));
     }
 
     function compareConjunction(c1 : Conjunction, c2 :Conjunction) : number {
-      return stringifyConjunction(c1).localeCompare(stringifyConjunction(c2))   }
+        return stringifyConjunction(c1).localeCompare(stringifyConjunction(c2))
+    }
 
     //////////////////////////////////////////////////////////////////////
     // Sorting-based algorithms
 
-        /**
-         * Sorts the input list and removes duplicates
-         */
-        function unique(xs : any[], cmp : (x:any, y:any) => number) : any[] {
-          var sorted : any[] = xs.sort(cmp);
-          var result : any[] = [];
+   /**
+    * Sorts the input list and removes duplicates
+    */
+    function unique(xs : any[], cmp : (x:any, y:any) => number) : any[] {
+        var sorted : any[] = xs.sort(cmp);
+        var result : any[] = [];
 
-          for(var i = 0; i < sorted.length - 1; i++)
+        for(var i = 0; i < sorted.length - 1; i++)
             if(cmp(sorted[i], sorted[i + 1]) != 0)
-              {result.push(sorted[i]);}
+                {result.push(sorted[i]);}
 
-          if(sorted.length > 0)
+        if(sorted.length > 0)
             {result.push(sorted[sorted.length - 1]);}
 
-          return result;
-        }
+        return result;
+    }
 
-        /**
-         * Computes the intersection of two lists
-         */
-        function intersect(xs : any[], ys : any[], cmp : (x:any, y:any) => number) {
-          var sorted1 : any[] = xs.sort(cmp);
-          var sorted2 : any[] = ys.sort(cmp);
-          var result  : any[] = [];
+   /**
+    * Computes the intersection of two lists
+    */
+    function intersect(xs : any[], ys : any[], cmp : (x:any, y:any) => number) {
+        var sorted1 : any[] = xs.sort(cmp);
+        var sorted2 : any[] = ys.sort(cmp);
+        var result  : any[] = [];
 
-          for(var i = 0, j = 0; i < sorted1.length && j < sorted2.length;) {
+        for(var i = 0, j = 0; i < sorted1.length && j < sorted2.length;) {
             var r = cmp(sorted1[i], sorted2[j]);
             if (r == 0) {result.push(sorted1[i]); i++; j++;}
             else {r == -1 ? i++ : j++;}
-          }
-
-          return result;
         }
+
+        return result;
+    }
 
     //////////////////////////////////////////////////////////////////////
     // Type Synonyms
@@ -152,9 +153,9 @@ module Interpreter {
      */
     type Location = {rel: string, id: string};
 
-
     /**
-     * The additional information that turns the original parse tree into
+     * The additional information that turns the oronTests
+     iginal parse tree into
      * its augmented counterpart.
      */
     type ObjectInfo = string[];
@@ -180,40 +181,41 @@ module Interpreter {
         var result: CommandInfo = [];
 
         if (cmd.command == "take") {
-          for (let ent of interpretEntity(cmd.entity, state)) {
-              if(ent != state.holding) {
-                  result.push([{polarity: true, relation: "holding", args: [ent]}]);
-              }
-          }
+            for (let ent of interpretEntity(cmd.entity, state)) {
+                if (ent != state.holding) {
+                    result.push([{polarity: true, relation: "holding", args: [ent]}]);
+                }
+            }
         }
         else if (!cmd.entity) {
             for (let loc of interpretLocation(cmd.location, state)) {
-                if(!isIllegal(state.holding,loc,state)){
+                if (!isIllegal(state.holding,loc,state)) {
                     result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
                 }
             }
         }
         else { // command is either "put" or "move"
             for (let ent of interpretEntity(cmd.entity, state)) {
-              for (let loc of interpretLocation(cmd.location, state)) {
-                  if(!isIllegal(ent,loc,state)){
+                for (let loc of interpretLocation(cmd.location, state)) {
+                    if (!isIllegal(ent,loc,state)) {
                       result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
-                  }
+                    }
+                }
             }
-          }
         }
 
-        for(var i = 0; i < result.length; i++)
-          {result[i] = unique(result[i], compareLiteral);}
+        for (var i = 0; i < result.length; i++) {
+            result[i] = unique(result[i], compareLiteral);
+        }
         result = unique(result, compareConjunction);
 
         return result;
     }
+
     /**
     * Checks whether placing the given object in the given location follows the physical laws
     */
-
-    function isIllegal(obj: string, loc: Location, state: WorldState){
+    function isIllegal(obj: string, loc: Location, state: WorldState) {
         return obj == loc.id
                || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
                                       && loc.id    != "floor"
@@ -255,10 +257,11 @@ module Interpreter {
     * Retrives the coordinates of an existing object, null for the floor
     */
     function locateObjectId(id: string, state: WorldState): {row : number; col : number} {
-      for(let row of state.stacks) for(let elem of row)
-          if(elem == id)
-            {return {row : state.stacks.indexOf(row), col : row.indexOf(elem)};}
-      return null;
+        for(let row of state.stacks) for(let elem of row)
+            if(elem == id) {
+                return {row : state.stacks.indexOf(row), col : row.indexOf(elem)};
+            }
+        return null;
     }
 
     /**
@@ -267,15 +270,15 @@ module Interpreter {
     function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
         var foundObjs: string[] = [];
 
-        if(obj.location == null) { // Attribute-based reference
-          for(var id in state.objects) {
-            if (  existsObjectId(id,state)
-               && (obj.form  == null || obj.form  == "anyform" || obj.form == state.objects[id].form)
-               && (obj.size  == null || obj.size  == state.objects[id].size                         )
-               && (obj.color == null || obj.color == state.objects[id].color                        ) )
+        if (obj.location == null) { // Attribute-based reference
+            for (var id in state.objects) {
+                if (existsObjectId(id,state)
+                    && (obj.form  == null || obj.form  == "anyform" || obj.form == state.objects[id].form)
+                    && (obj.size  == null || obj.size  == state.objects[id].size                         )
+                    && (obj.color == null || obj.color == state.objects[id].color                        ))
                 {foundObjs.push(id);}
-          }
-          if (obj.form == "floor") { foundObjs.push("floor"); }
+            }
+            if (obj.form == "floor") { foundObjs.push("floor"); }
         }
         else { // Location-based reference
             var objects1 : string [] = interpretObject(obj.object, state);
@@ -283,52 +286,60 @@ module Interpreter {
 
             var locations = interpretLocation(obj.location, state);
 
-            for(let location of locations) {
-              var rc = locateObjectId(location.id, state);
+            for (let location of locations) {
+                var rc = locateObjectId(location.id, state);
 
-              if(rc == null) { // We are dealing with the floor
-                if(location.rel == "ontop")
-                  for(let row of state.stacks)
-                    if(row.length > 0)
-                      {objects2.push(row[0]);}
-
-                if(location.rel == "above")
-                  for(let row of state.stacks)
-                    for(let elem of row)
-                     {objects2.push(elem);}
-              }
-              else { // We are not dealing with the floor
-                var target = state.stacks[rc.row][rc.col];
-                var ontop  = state.stacks[rc.row][rc.col + 1];
-
-                switch(location.rel) {
-                  case "ontop"   :
-                    if(ontop != null)
-                      {objects2.push(ontop);}
-                    break;
-                  case "above"   :
-                    for(let t of state.stacks[rc.row])
-                      if(state.stacks[rc.row].indexOf(t) > rc.col)
-                        {objects2.push(t);}
-                    break;
-                  case "inside"  : // handle double nesting
-                    if(ontop != null && state.objects[target].form == "box")
-                      {objects2.push(ontop);}
-                    break;
-                  case "beside"  : // check bad row case
-                    for(let t of state.stacks[rc.row - 1]) {objects2.push(t);}
-                    for(let t of state.stacks[rc.row + 1]) {objects2.push(t);}
-                    break;
-                  case "leftof"  :
-                    for(let t of state.stacks[rc.row - 1]) {objects2.push(t);}
-                    break;
-                  case "rightof" :
-                    for(let t of state.stacks[rc.row + 1]) {objects2.push(t);}
-                    break;
+                if (rc == null) { // We are dealing with the floor
+                    if (location.rel == "ontop") {
+                        for (let row of state.stacks) {
+                            if (row.length > 0) {
+                                objects2.push(row[0]);
+                            }
+                        }
+                    }
+                    if (location.rel == "above") {
+                        for (let row of state.stacks) {
+                            for (let elem of row) {
+                                objects2.push(elem);
+                            }
+                        }
+                    }
                 }
-              }
-            foundObjs = intersect(objects1, objects2, function (x,y)
-              {return x.localeCompare(y);});
+                else { // We are not dealing with the floor
+                    var target = state.stacks[rc.row][rc.col];
+                    var ontop  = state.stacks[rc.row][rc.col + 1];
+
+                    switch(location.rel) {
+                    case "ontop"   :
+                        if (ontop != null) {
+                            objects2.push(ontop);
+                        }
+                        break;
+                    case "above"   :
+                        for (let t of state.stacks[rc.row]) {
+                            if (state.stacks[rc.row].indexOf(t) > rc.col) {
+                                objects2.push(t);
+                            }
+                        }
+                        break;
+                    case "inside"  : // handle double nesting
+                        if (ontop != null && state.objects[target].form == "box") {
+                            objects2.push(ontop);}
+                        break;
+                    case "beside"  : // check bad row case
+                        for (let t of state.stacks[rc.row - 1]) {objects2.push(t);}
+                        for (let t of state.stacks[rc.row + 1]) {objects2.push(t);}
+                        break;
+                    case "leftof"  :
+                        for (let t of state.stacks[rc.row - 1]) {objects2.push(t);}
+                        break;
+                    case "rightof" :
+                        for (let t of state.stacks[rc.row + 1]) {objects2.push(t);}
+                        break;
+                    }
+                }
+                foundObjs = intersect(objects1, objects2,
+                                      function (x,y){return x.localeCompare(y);});
             }
         }
 
