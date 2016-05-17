@@ -261,7 +261,7 @@ module Interpreter {
     /**
     * Retrives the coordinates of an existing object, null for the floor
     */
-    function locateObjectId(id: string, state: WorldState): {row : number; col : number} {
+    export function locateObjectId(id: string, state: WorldState): {row : number; col : number} {
         for(let row of state.stacks) for(let elem of row)
             if(elem == id) {
                 return {row : state.stacks.indexOf(row), col : row.indexOf(elem)};
