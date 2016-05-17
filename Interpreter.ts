@@ -229,10 +229,14 @@ module Interpreter {
                || loc.rel == "ontop"  && loc.id != "floor"
                                       && (state.objects[loc.id].form == "ball"
                                           || state.objects[loc.id].form == "box")
-               || (loc.rel == "inside" || loc.rel == "ontop")
+               || (loc.rel == "inside" || loc.rel == "ontop" || loc.rel == "above")
                                       && loc.id != "floor"
                                       && state.objects[loc.id].size == "small"
                                       && state.objects[obj].size    == "large"
+               || loc.rel == "under"  && obj != "floor"
+                                      && state.objects[loc.id].size == "large"
+                                      && state.objects[obj].size    == "small"
+               || loc.rel == "under"  && loc.id == "floor"
                || loc.rel == "ontop"  && state.objects[obj].form == "box"
                                       && state.objects[obj].size == "small"
                                       && loc.id != "floor"
@@ -242,7 +246,7 @@ module Interpreter {
                || loc.rel == "ontop"  && state.objects[obj].form == "box"
                                       && state.objects[obj].size == "large"
                                       && loc.id != "floor"
-            && state.objects[loc.id].form == "pyramid"
+                                      && state.objects[loc.id].form == "pyramid"
     }
     /**
     * Checks whether an object with the given id is in the world stacks or arm
@@ -323,9 +327,20 @@ module Interpreter {
                             }
                         }
                         break;
+                    case "under"   :
+                        for (let t of state.stacks[rc.row]) {
+                            if (state.stacks[rc.row].indexOf(t) < rc.col) {
+                                objects2.push(t);
+                            }
+                        }
+                        break;
                     case "inside"  : // handle double nesting
                         if (ontop != null && state.objects[target].form == "box") {
-                            objects2.push(ontop);}
+                            objects2.push(ontop);
+                            if (state.objects[ontop].form == "box" && state.stacks[rc.row][rc.col + 2] != null) {
+                                objects2.push(state.stacks[rc.row][rc.col + 2]);
+                            }
+                        }
                         break;
                     case "beside"  : // check bad row case
                         for (let t of state.stacks[rc.row - 1]) {objects2.push(t);}

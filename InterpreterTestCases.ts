@@ -74,16 +74,33 @@ module Interpreter {
        utterance: "put a black ball in a box on the floor",
        interpretations: [["inside(f,k)"], ["ontop(f,floor)"]]
       },
-	// some extra tests to check no entity and physical laws
-	{world: "small",
-	 utterance: "put it on the floor",
-	 interpretations: [["ontop(a,floor)"]]},
-	{world: "small",
-	 utterance: "put a small box on the floor",
-	 interpretations: [["ontop(m,floor)"]]},
-	{world: "small",
-	 utterance: "put a large box on the floor",
-	 interpretations: [["ontop(k,floor)","ontop(l,floor)"]]}
+      // some extra tests
+      // entity-less command
+      {world: "small",
+       utterance: "put it on the floor",
+       interpretations: [["ontop(a,floor)"]]},
+      // tests to check need for special floor cases
+      // in physical laws
+      {world: "small",
+       utterance: "put a small box on the floor",
+       interpretations: [["ontop(m,floor)"]]},
+      {world: "small",
+       utterance: "put a large box on the floor",
+       interpretations: [["ontop(k,floor)","ontop(l,floor)"]]},
+      // tests for "under" relation
+      {world: "small",
+       utterance: "put the table below the blue box",
+       interpretations: [["under(g,m)"]]
+      },
+      {world: "small",
+       utterance: "take the box below the black ball",
+       interpretations: [["holding(k) | holding(m)"]]
+      },
+      // nested boxes
+      {world: "small",
+       utterance: "take the ball inside the yellow box",
+       interpretations: [["holding(f)"]]
+      }
   );
 
 
