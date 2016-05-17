@@ -1,4 +1,5 @@
 shrdlite-*.js
+doc/
 tsconfig.json
 /*.js
 TestAStar.js
