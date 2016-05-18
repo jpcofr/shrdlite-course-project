@@ -266,6 +266,10 @@ module Interpreter {
             if(elem == id) {
                 return {row : state.stacks.indexOf(row), col : row.indexOf(elem)};
             }
+        if (id == state.holding) {
+            // does this work?
+            return {row : null, col : state.arm};
+        }
         return null;
     }
 

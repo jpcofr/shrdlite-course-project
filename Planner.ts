@@ -84,7 +84,7 @@ module Planner {
             else {
                 // we are not dealing with the floor
                 switch(lit.relation) {
-                case "ontop":
+                case "ontop" :
                     isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1);
                     break;
                 case "inside" :
@@ -109,6 +109,73 @@ module Planner {
             }
         }
         return (lit.polarity == isTrue);
+    }
+
+   /**
+    * A heuristic for how far a given state is from a goal literal.
+    */
+    function litHeuristic(state: WorldState, lit: Interpreter.Literal) : number {
+        if (isValid(lit,state)) {
+            return 0;
+        }
+        else {
+            // The goal has not been reached
+            // Lots of room for improvement:
+            // - How many things are on top of the thing we need to move?
+            // - Special case if one of the arg objs is being held? Add pickup/drop steps?
+            var minSteps = 0;
+            var ob1 : string = lit.args[0];
+            var loc1 = Interpreter.locateObjectId(ob1, state);
+            var armPos : number = state.arm;
+            if (lit.relation == "holding") {
+                minSteps = Math.abs(loc1.col - armPos) + 1;
+            }
+            else {
+                // we have 2 arguments
+                var ob2 = lit.args[1];
+                var loc2 = Interpreter.locateObjectId(ob2, state);
+                if (ob1 == "floor") {
+                    minSteps = 0;
+                }
+                else if (ob2 == "floor") {
+                    minSteps = 0;
+                }
+                else {
+                    // we are not dealing with the floor
+                    switch(lit.relation) {
+                    case "ontop" :
+                    case "inside" :
+                    case "above" :
+                    case "under" :
+                        minSteps = Math.abs(loc1.col - loc2.col);
+                        break;
+                    case "beside" :
+                        minSteps = Math.abs(loc1.col - loc2.col) - 1;
+                        break;
+                    case "leftof" :
+                    case "rightof" :
+                        minSteps = Math.abs(loc1.col - loc2.col) + 1;
+                        break;
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+   /**
+    * A heuristic for how far a given state is from a goal DNF formula.
+    */
+    function heuristic(state : WorldState, goal : Interpreter.DNFFormula) : number {
+        var min = Number.MAX_VALUE;
+        for (let conjunction of goal) {
+            var lHs = conjunction.map(function (x) { return litHeuristic(state,x);})
+            var maxH = Math.max(...lHs);
+            if (maxH < min) {
+                min = maxH;
+            }
+        }
+        return min;
     }
 
     /**
