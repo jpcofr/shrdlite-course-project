@@ -88,13 +88,13 @@ module Planner {
                     isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1);
                     break;
                 case "inside" :
-                    isTrue = (loc1.col == loc2.col && loc1.col == loc2.row + 1);
+                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1);
                     break;
                 case "above" :
-                    isTrue = (loc1.col == loc2.col && loc1.col > loc2.row);
+                    isTrue = (loc1.col == loc2.col && loc1.row > loc2.row);
                     break;
                 case "under" :
-                    isTrue = (loc1.col == loc2.col && loc1.col < loc2.row);
+                    isTrue = (loc1.col == loc2.col && loc1.row < loc2.row);
                     break;
                 case "beside" :
                     isTrue = (Math.abs(loc1.col - loc2.col) == 1);
