@@ -1,5 +1,7 @@
 ///<reference path="World.ts"/>
 ///<reference path="Interpreter.ts"/>
+///<reference path="Graph.ts"/>
+///<reference path="lib/collections.ts"/>
 
 /**
 * Planner module
@@ -59,6 +61,60 @@ module Planner {
      * Checks whether the given literal is satisfied in the given
      * world state.
      */
+
+    // The following function is a comparison tool, not a pretty
+    // printer. Note that, as no object can enter or exit the world,
+    // a state is completely described by its stacks, as the object
+    // eventually in the arm can be deduced from them.
+    function stringifyState (state : WorldState) : string {
+      var result : string = "";
+
+      for(let row of state.stacks) {
+        for(let obj of row) {result += obj + ",";}
+        result += ";";
+      }
+
+      return result;
+    }
+
+    function isLegal( rel    : string     ,
+                      source : string     ,
+                      dest   : string     ,
+                      state  : WorldState )
+      {return !Interpreter.badLocation(source, {rel:rel, id:dest}, state);}
+
+    class searchSpace implements Graph<WorldState> {
+      outgoingEdges = function (state : WorldState) {
+        var result : Edge<WorldState>[] = [];
+
+        for (var sourceRow in state.stacks)
+          if(state.stacks[sourceRow].length > 0) {
+              var sourceCol = state.stacks[sourceRow].length - 1;
+              var sourceLast = state.stacks[sourceRow][sourceCol];
+
+              for (var destRow in state.stacks) {
+                var destCol = state.stacks[destRow].length - 1;
+                var destLast = state.stacks[destRow][destCol];
+
+                  if (  destRow != sourceRow
+                     && (  state.stacks[destRow].length == 0
+                        || isLegal("above", sourceLast, destLast, state) ) ) {
+                     var newState = state;
+                     newState.stacks[sourceRow].pop();
+                     newState.stacks[destRow].push(sourceLast);
+
+                     result.push({from : state, to : newState, cost : 1});
+                  }
+              }
+          }
+
+          return result;
+      }
+
+      compareNodes = function (s1 : WorldState, s2 : WorldState) : number
+        {return stringifyState(s1).localeCompare(stringifyState(s2));}
+    }
+
     function isValid(lit : Interpreter.Literal, state : WorldState) : boolean {
         // literal has polarity (boolean), relation (string), args (string list)
         // either the relation is "holding" with one argument, or there are 2 args?

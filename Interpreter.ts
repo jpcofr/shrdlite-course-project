@@ -190,7 +190,7 @@ module Interpreter {
         }
         else if (!cmd.entity) {
             for (let loc of interpretLocation(cmd.location, state)) {
-                if (!isIllegal(state.holding,loc,state)) {
+                if (!badLocation(state.holding,loc,state)) {
                     result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
                 }
             }
@@ -198,7 +198,7 @@ module Interpreter {
         else { // command is either "put" or "move"
             for (let ent of interpretEntity(cmd.entity, state)) {
                 for (let loc of interpretLocation(cmd.location, state)) {
-                    if (!isIllegal(ent,loc,state)) {
+                    if (!badLocation(ent,loc,state)) {
                       result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
                     }
                 }
@@ -216,37 +216,37 @@ module Interpreter {
     /**
     * Checks whether placing the given object in the given location follows the physical laws
     */
-    function isIllegal(obj: string, loc: Location, state: WorldState) {
-        return obj == loc.id
-               || loc.rel == "ontop"  && state.objects[obj].form    == "ball"
-                                      && loc.id    != "floor"
-               || loc.rel == "inside" && state.objects[loc.id].form != "box"
+    export function badLocation(obj: string, loc: Location, state: WorldState) {
+        return  obj == loc.id
+            || loc.rel == "ontop"  && state.objects[obj].form == "ball"
+                                   && loc.id != "floor"
+            || loc.rel == "inside" && state.objects[loc.id].form != "box"
 
-               || loc.rel == "inside" && state.objects[loc.id].size == state.objects[obj].size
-                                      && (state.objects[obj].form == "pyramid"
-                                          || state.objects[obj].form == "plank"
-                                          || state.objects[obj].form == "box")
-               || loc.rel == "ontop"  && loc.id != "floor"
-                                      && (state.objects[loc.id].form == "ball"
-                                          || state.objects[loc.id].form == "box")
-               || (loc.rel == "inside" || loc.rel == "ontop" || loc.rel == "above")
-                                      && loc.id != "floor"
-                                      && state.objects[loc.id].size == "small"
-                                      && state.objects[obj].size    == "large"
-               || loc.rel == "under"  && obj != "floor"
-                                      && state.objects[loc.id].size == "large"
-                                      && state.objects[obj].size    == "small"
-               || loc.rel == "under"  && loc.id == "floor"
-               || loc.rel == "ontop"  && state.objects[obj].form == "box"
-                                      && state.objects[obj].size == "small"
-                                      && loc.id != "floor"
-                                      && state.objects[loc.id].size == "small"
-                                      && (state.objects[loc.id].form == "pyramid"
-                                          || state.objects[loc.id].form == "brick")
-               || loc.rel == "ontop"  && state.objects[obj].form == "box"
-                                      && state.objects[obj].size == "large"
-                                      && loc.id != "floor"
-                                      && state.objects[loc.id].form == "pyramid"
+            || loc.rel == "inside" && state.objects[loc.id].size == state.objects[obj].size
+                                   && (state.objects[obj].form == "pyramid"
+                                      || state.objects[obj].form == "plank"
+                                      || state.objects[obj].form == "box")
+            || loc.rel == "ontop"  && loc.id != "floor"
+                                   && (state.objects[loc.id].form == "ball"
+                                      || state.objects[loc.id].form == "box")
+            || (loc.rel == "inside" || loc.rel == "ontop" || loc.rel == "above")
+                                  && loc.id != "floor"
+                                  && state.objects[loc.id].size == "small"
+                                  && state.objects[obj].size    == "large"
+            || loc.rel == "under" && obj != "floor"
+                                  && state.objects[loc.id].size == "large"
+                                  && state.objects[obj].size    == "small"
+            || loc.rel == "under" && loc.id == "floor"
+            || loc.rel == "ontop" && state.objects[obj].form == "box"
+                                  && state.objects[obj].size == "small"
+                                  && loc.id != "floor"
+                                  && state.objects[loc.id].size == "small"
+                                  && (state.objects[loc.id].form == "pyramid"
+                                      || state.objects[loc.id].form == "brick")
+            || loc.rel == "ontop" && state.objects[obj].form == "box"
+                                  && state.objects[obj].size == "large"
+                                  && loc.id != "floor"
+                                  && state.objects[loc.id].form == "pyramid"
     }
     /**
     * Checks whether an object with the given id is in the world stacks or arm
