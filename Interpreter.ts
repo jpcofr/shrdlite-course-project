@@ -338,10 +338,11 @@ module Interpreter {
                             }
                         }
                         break;
-                    case "inside"  : // handle double nesting
+                    case "inside"  :
                         if (ontop != null && state.objects[target].form == "box") {
                             objects2.push(ontop);
                             if (state.objects[ontop].form == "box" && state.stacks[rc.row][rc.col + 2] != null) {
+                                // nested boxes
                                 objects2.push(state.stacks[rc.row][rc.col + 2]);
                             }
                         }
