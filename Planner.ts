@@ -113,7 +113,7 @@ module Planner {
                 newState.holding = sourceLast;
                 newState.stacks[sourceCol].pop();
 
-                var commands = [];
+                var commands : string[] = [];
                 commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
                 commands.push("p");
 
@@ -134,7 +134,7 @@ module Planner {
                  newState.holding = null;
                  newState.stacks[destCol].push(state.holding);
 
-                 var commands = [];
+                var commands : string[] = [];
                  commands.concat(makeCommands(state.arm, parseInt(destCol)));
                  commands.push("d");
 
