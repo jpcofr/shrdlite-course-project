@@ -174,6 +174,25 @@ module Planner {
     }
 
    /**
+    * Checks whether the given formula is satisfied in the given state
+    */
+    function isSatisfied(formula : Interpreter.DNFFormula, state : WorldState) : boolean {
+        var result : boolean = false;
+        for (let conjunction of formula) {
+            result = true;
+            for (let literal of conjunction) {
+                if (!isValid(literal,state)) {
+                    result = false;
+                }
+            }
+            if (result) {
+                // all the literals in the conjunction are true in the current state
+                return true;
+            }
+        }
+        return false;
+    }
+   /**
     * A heuristic for the minimum number of steps needed for the robot arm to pick
     * pick up an object assuming it is already positioned above the correct column
     */
