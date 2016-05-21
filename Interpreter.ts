@@ -167,16 +167,12 @@ module Interpreter {
     // private functions
 
     /**
-     * The core interpretation function. The code here is just a
-     * template; you should rewrite this function entirely. In this
-     * template, the code produces a dummy interpretation which is not
-     * connected to `cmd`, but your version of the function should
-     * analyse cmd in order to figure out what interpretation to
-     * return.
+     * The core interpretation function.
      * @param cmd The actual command. Note that it is *not* a string, but rather an object of type `Command` (as it has been parsed by the parser).
      * @param state The current state of the world. Useful to look up objects in the world.
-     * @returns A list of list of Literal, representing a formula in disjunctive normal form (disjunction of conjunctions). See the dummy interpetation returned in the code for an example, which means ontop(a,floor) AND holding(b).
+     * @returns A list of list of Literal, representing a formula in disjunctive normal form (disjunction of conjunctions).
      * @throws An error when no valid interpretations can be found
+     * TODO : throw an error when no valid interpretation (then our changes to the interpret function may be unnecessary?)
      */
     function interpretCommand(cmd: Parser.Command, state: WorldState): CommandInfo {
         var result: CommandInfo = [];
@@ -262,9 +258,9 @@ module Interpreter {
     * Retrives the coordinates of an existing object, null for the floor
     */
     export function locateObjectId(id: string, state: WorldState): {row : number; col : number} {
-        for(let row of state.stacks) for(let elem of row)
+        for(let col of state.stacks) for(let elem of col)
             if(elem == id) {
-                return {row : state.stacks.indexOf(row), col : row.indexOf(elem)};
+                return {col : state.stacks.indexOf(col), row : col.indexOf(elem)};
             }
         if (id == state.holding) {
             // does this work?
@@ -300,61 +296,75 @@ module Interpreter {
 
                 if (rc == null) { // We are dealing with the floor
                     if (location.rel == "ontop") {
-                        for (let row of state.stacks) {
-                            if (row.length > 0) {
-                                objects2.push(row[0]);
+                        for (let col of state.stacks) {
+                            if (col.length > 0) {
+                                objects2.push(col[0]);
                             }
                         }
                     }
                     if (location.rel == "above") {
-                        for (let row of state.stacks) {
-                            for (let elem of row) {
+                        for (let col of state.stacks) {
+                            for (let elem of col) {
                                 objects2.push(elem);
                             }
                         }
                     }
                 }
                 else { // We are not dealing with the floor
-                    var target = state.stacks[rc.row][rc.col];
-                    var ontop  = state.stacks[rc.row][rc.col + 1];
+                    var target = state.stacks[rc.col][rc.row];
+                    var justAbove  = state.stacks[rc.col][rc.row + 1];
 
                     switch(location.rel) {
                     case "ontop"   :
-                        if (ontop != null) {
-                            objects2.push(ontop);
+                        if (justAbove != null && state.objects[target].form != "box") {
+                            objects2.push(justAbove);
                         }
                         break;
                     case "above"   :
-                        for (let t of state.stacks[rc.row]) {
-                            if (state.stacks[rc.row].indexOf(t) > rc.col) {
+                        for (let t of state.stacks[rc.col]) {
+                            if (state.stacks[rc.col].indexOf(t) > rc.row) {
                                 objects2.push(t);
                             }
                         }
                         break;
                     case "under"   :
-                        for (let t of state.stacks[rc.row]) {
-                            if (state.stacks[rc.row].indexOf(t) < rc.col) {
+                        for (let t of state.stacks[rc.col]) {
+                            if (state.stacks[rc.col].indexOf(t) < rc.row) {
                                 objects2.push(t);
                             }
                         }
                         break;
-                    case "inside"  : // handle double nesting
-                        if (ontop != null && state.objects[target].form == "box") {
-                            objects2.push(ontop);
-                            if (state.objects[ontop].form == "box" && state.stacks[rc.row][rc.col + 2] != null) {
-                                objects2.push(state.stacks[rc.row][rc.col + 2]);
+                    case "inside"  :
+                        if (justAbove != null && state.objects[target].form == "box") {
+                            objects2.push(justAbove);
+                            if (state.objects[justAbove].form == "box" && state.stacks[rc.col][rc.row + 2] != null) {
+                                // nested boxes
+                                objects2.push(state.stacks[rc.col][rc.row + 2]);
                             }
                         }
                         break;
                     case "beside"  : // check bad row case
-                        for (let t of state.stacks[rc.row - 1]) {objects2.push(t);}
-                        for (let t of state.stacks[rc.row + 1]) {objects2.push(t);}
+                        for (let t of state.stacks[rc.col - 1]) {objects2.push(t);}
+                        for (let t of state.stacks[rc.col + 1]) {objects2.push(t);}
                         break;
+
                     case "leftof"  :
-                        for (let t of state.stacks[rc.row - 1]) {objects2.push(t);}
+                        for (let s of state.stacks) {
+                            if (state.stacks.indexOf(s) < rc.col) {
+                                for (let t of s) {
+                                    objects2.push(t);
+                                }
+                            }
+                        }
                         break;
                     case "rightof" :
-                        for (let t of state.stacks[rc.row + 1]) {objects2.push(t);}
+                        for (let s of state.stacks) {
+                            if (state.stacks.indexOf(s) > rc.col) {
+                                for (let t of s) {
+                                    objects2.push(t);
+                                }
+                            }
+                        }
                         break;
                     }
                 }

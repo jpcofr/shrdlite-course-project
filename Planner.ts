@@ -57,10 +57,6 @@ module Planner {
 
     //////////////////////////////////////////////////////////////////////
     // private functions
-    /**
-     * Checks whether the given literal is satisfied in the given
-     * world state.
-     */
 
     // The following function is a comparison tool, not a pretty
     // printer. Note that, as no object can enter or exit the world,
@@ -153,10 +149,14 @@ module Planner {
       return result;
       }
 
-      compareNodes = function (s1 : WorldState, s2 : WorldState) : number
+        compareNodes = function (s1 : WorldState, s2 : WorldState) : number
         {return stringifyState(s1).localeCompare(stringifyState(s2));}
     }
 
+    /**
+     * Checks whether the given literal is satisfied in the given
+     * world state.
+     */
     function isValid(lit : Interpreter.Literal, state : WorldState) : boolean {
         // literal has polarity (boolean), relation (string), args (string list)
         // either the relation is "holding" with one argument, or there are 2 args?
@@ -183,10 +183,16 @@ module Planner {
                 // we are not dealing with the floor
                 switch(lit.relation) {
                 case "ontop" :
-                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1);
+                    // objects are "inside" boxes but "ontop" of other objects
+                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1 && state.objects[ob2].form != "box");
                     break;
                 case "inside" :
-                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1);
+                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1 && state.objects[ob2].form == "box");
+                    // special case for nested boxes
+                    var inside = state.stacks[loc2.col][loc2.row+1];
+                    if (inside != null && state.objects[inside].form == "box") {
+                        isTrue = isTrue || (loc1.col == loc2.col && loc1.row == loc2.row + 2);
+                    }
                     break;
                 case "above" :
                     isTrue = (loc1.col == loc2.col && loc1.row > loc2.row);
@@ -210,7 +216,46 @@ module Planner {
     }
 
    /**
+    * Checks whether the given formula is satisfied in the given state
+    */
+    function isSatisfied(formula : Interpreter.DNFFormula, state : WorldState) : boolean {
+        var result : boolean = false;
+        for (let conjunction of formula) {
+            result = true;
+            for (let literal of conjunction) {
+                if (!isValid(literal,state)) {
+                    result = false;
+                }
+            }
+            if (result) {
+                // all the literals in the conjunction are true in the current state
+                return true;
+            }
+        }
+        return false;
+    }
+   /**
+    * A heuristic for the minimum number of steps needed for the robot arm to pick
+    * pick up an object assuming it is already positioned above the correct column
+    */
+    function minAccess(obj: string, state: WorldState) : number {
+        if (obj == "floor" || obj == state.holding) {
+            return 0;
+        }
+        else {
+            var loc = Interpreter.locateObjectId(obj,state);
+            // height of stack
+            var height = state.stacks[loc.col].length;
+            // number of objects above obj
+            var above = height - loc.row - 1;
+            // for each object above obj we need at least 4 moves
+            // (pick it up, move it at least 1 stack, release it, move back into position)
+            return above*4;
+        }
+    }
+   /**
     * A heuristic for how far a given state is from a goal literal.
+    * Assumes that the cost is the length of a path (# of l,r,p, or d)
     */
     function litHeuristic(state: WorldState, lit: Interpreter.Literal) : number {
         if (isValid(lit,state)) {
@@ -218,9 +263,6 @@ module Planner {
         }
         else {
             // The goal has not been reached
-            // Lots of room for improvement:
-            // - How many things are on top of the thing we need to move?
-            // - Special case if one of the arg objs is being held? Add pickup/drop steps?
             var minSteps = 0;
             var ob1 : string = lit.args[0];
             var loc1 = Interpreter.locateObjectId(ob1, state);
@@ -232,37 +274,60 @@ module Planner {
                 // we have 2 arguments
                 var ob2 = lit.args[1];
                 var loc2 = Interpreter.locateObjectId(ob2, state);
-                if (ob1 == "floor") {
-                    minSteps = 0;
-                }
-                else if (ob2 == "floor") {
-                    minSteps = 0;
+                // minimum moves to access ob1
+                var access1 = minAccess(ob1,state);
+                if (ob2 == "floor") {
+                    if (ob1 == state.holding) {
+                        // at best, we just need to put the object down
+                        minSteps = 1;
+                    }
+                    else {
+                        // we need to access the object, pick it up, move it, put it down
+                        minSteps = access1 + 3;
+                    }
                 }
                 else {
                     // we are not dealing with the floor
+
+                    // minimum number of arm moves to the position of the object to be moved
+                    var minArm = Math.min(Math.abs(armPos - loc1.col), Math.abs(armPos - loc2.col));
+                    // minimum moves to access ob2
+                    var access2 = minAccess(ob2,state);
                     switch(lit.relation) {
                     case "ontop" :
-                    case "inside" :
                     case "above" :
                     case "under" :
-                        minSteps = Math.abs(loc1.col - loc2.col);
+                        // minimum moves from original object position to new one
+                        var minMove = Math.abs(loc1.col - loc2.col);
+                        break;
+                    case "inside" :
+                        var minMove = Math.abs(loc1.col - loc2.col);
+                        // nested box exception, less moves needed to access box if it's sufficient
+                        // to place the object in a box inside the box
+                        var inside = state.stacks[loc2.col][loc2.row + 1];
+                        if (inside != null && state.objects[inside].form == "box" && state.objects[ob1].size == "small") {
+                            access2 = access2 - 4;
+                        }
                         break;
                     case "beside" :
-                        minSteps = Math.abs(loc1.col - loc2.col) - 1;
+                        var minMove = Math.abs(loc1.col - loc2.col) - 1;
                         break;
                     case "leftof" :
                     case "rightof" :
-                        minSteps = Math.abs(loc1.col - loc2.col) + 1;
+                        var minMove = Math.abs(loc1.col - loc2.col) + 1;
                         break;
                     }
+                    // We add 1 step for dropping the object into position
+                    minSteps = minArm + access1 + access2 + minMove + 1;
                 }
             }
         }
-        return 0;
+        return minSteps;
     }
 
    /**
     * A heuristic for how far a given state is from a goal DNF formula.
+    * based on the cost being the length of a path (# of l,r,p and d commands)
     */
     function heuristic(state : WorldState, goal : Interpreter.DNFFormula) : number {
         var min = Number.MAX_VALUE;
@@ -277,14 +342,7 @@ module Planner {
     }
 
     /**
-     * The core planner function. The code here is just a template;
-     * you should rewrite this function entirely. In this template,
-     * the code produces a dummy plan which is not connected to the
-     * argument `interpretation`, but your version of the function
-     * should be such that the resulting plan depends on
-     * `interpretation`.
-     *
-     *
+     * The core planner function.
      * @param interpretation The logical interpretation of the user's desired goal. The plan needs to be such that by executing it, the world is put into a state that satisfies this goal.
      * @param state The current world state.
      * @returns Basically, a plan is a
