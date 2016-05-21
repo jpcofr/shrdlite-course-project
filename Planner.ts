@@ -57,10 +57,6 @@ module Planner {
 
     //////////////////////////////////////////////////////////////////////
     // private functions
-    /**
-     * Checks whether the given literal is satisfied in the given
-     * world state.
-     */
 
     // The following function is a comparison tool, not a pretty
     // printer. Note that, as no object can enter or exit the world,
@@ -84,37 +80,41 @@ module Planner {
       {return !Interpreter.badLocation(source, {rel:rel, id:dest}, state);}
 
     class searchSpace implements Graph<WorldState> {
-      outgoingEdges = function (state : WorldState) {
-        var result : Edge<WorldState>[] = [];
+        outgoingEdges = function (state : WorldState) : Edge<WorldState>[] {
+            var result : Edge<WorldState>[] = [];
 
-        for (var sourceRow in state.stacks)
-          if(state.stacks[sourceRow].length > 0) {
-              var sourceCol = state.stacks[sourceRow].length - 1;
-              var sourceLast = state.stacks[sourceRow][sourceCol];
+            for (var sourceRow in state.stacks)
+                if (state.stacks[sourceRow].length > 0) {
+                    var sourceCol = state.stacks[sourceRow].length - 1;
+                    var sourceLast = state.stacks[sourceRow][sourceCol];
 
-              for (var destRow in state.stacks) {
-                var destCol = state.stacks[destRow].length - 1;
-                var destLast = state.stacks[destRow][destCol];
+                    for (var destRow in state.stacks) {
+                        var destCol = state.stacks[destRow].length - 1;
+                        var destLast = state.stacks[destRow][destCol];
 
-                  if (  destRow != sourceRow
-                     && (  state.stacks[destRow].length == 0
-                        || isLegal("above", sourceLast, destLast, state) ) ) {
-                     var newState = state;
-                     newState.stacks[sourceRow].pop();
-                     newState.stacks[destRow].push(sourceLast);
+                        if (  destRow != sourceRow
+                              && (  state.stacks[destRow].length == 0
+                                    || isLegal("above", sourceLast, destLast, state) ) ) {
+                            var newState = state;
+                            newState.stacks[sourceRow].pop();
+                            newState.stacks[destRow].push(sourceLast);
 
-                     result.push({from : state, to : newState, cost : 1});
-                  }
-              }
-          }
+                            result.push({from : state, to : newState, cost : 1});
+                        }
+                    }
+                }
 
-          return result;
-      }
+            return result;
+        }
 
         compareNodes = function (s1 : WorldState, s2 : WorldState) : number
         {return stringifyState(s1).localeCompare(stringifyState(s2));}
     }
 
+    /**
+     * Checks whether the given literal is satisfied in the given
+     * world state.
+     */
     function isValid(lit : Interpreter.Literal, state : WorldState) : boolean {
         // literal has polarity (boolean), relation (string), args (string list)
         // either the relation is "holding" with one argument, or there are 2 args?
@@ -191,10 +191,10 @@ module Planner {
             // (pick it up, move it at least 1 stack, release it, move back into position)
             return above*4;
         }
-
     }
    /**
     * A heuristic for how far a given state is from a goal literal.
+    * Assumes that the cost is the length of a path (# of l,r,p, or d)
     */
     function litHeuristic(state: WorldState, lit: Interpreter.Literal) : number {
         if (isValid(lit,state)) {
@@ -261,11 +261,12 @@ module Planner {
                 }
             }
         }
-        return 0;
+        return minSteps;
     }
 
    /**
     * A heuristic for how far a given state is from a goal DNF formula.
+    * based on the cost being the length of a path (# of l,r,p and d commands)
     */
     function heuristic(state : WorldState, goal : Interpreter.DNFFormula) : number {
         var min = Number.MAX_VALUE;
@@ -280,14 +281,7 @@ module Planner {
     }
 
     /**
-     * The core planner function. The code here is just a template;
-     * you should rewrite this function entirely. In this template,
-     * the code produces a dummy plan which is not connected to the
-     * argument `interpretation`, but your version of the function
-     * should be such that the resulting plan depends on
-     * `interpretation`.
-     *
-     *
+     * The core planner function.
      * @param interpretation The logical interpretation of the user's desired goal. The plan needs to be such that by executing it, the world is put into a state that satisfies this goal.
      * @param state The current world state.
      * @returns Basically, a plan is a
