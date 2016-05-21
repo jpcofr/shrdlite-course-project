@@ -28,7 +28,7 @@ interface Graph<Node> {
 /** Type that reports the result of a search. */
 class SearchResult<Node> {
     /** The path (sequence of Nodes) found by the search algorithm. */
-    path : Node[];
+    path : Edge<Node>[];
     /** The total cost of the path. */
     cost : number;
 }
@@ -56,7 +56,7 @@ function aStarSearch<Node> (
     timeout : number
 ) : SearchResult<Node> {
     var failure : SearchResult<Node> = {path : [], cost : 0};
-    //var timer = setTimeout(function () {return failure;}, timeout * 1000);
+    var timer = setTimeout(function () {return failure;}, timeout * 1000);
 
     var explored = new collections.Dictionary<Node, Info<Node>> ();
     var frontier = new collections.BSTree<Prio<Node>>
@@ -69,7 +69,7 @@ function aStarSearch<Node> (
     var startPrio = { node      : start     ,
                       rank      : startHeur } ;
 
-    var startInfo = { parent    : start      ,
+    var startInfo = { parent    : null       ,
                       cost      : 0          ,
                       heuristic : startHeur  ,
                       priority  : startPrio  } ;
@@ -98,7 +98,7 @@ function aStarSearch<Node> (
             explored.remove(edge.to);
             frontier.remove(toPrio);
 
-            toInfo.cost = toCost; toInfo.parent = min.node;
+            toInfo.cost = toCost; toInfo.parent = edge;
             toPrio.rank = toInfo.cost + toInfo.heuristic;
 
             explored.setValue(edge.to, toInfo);
@@ -111,7 +111,7 @@ function aStarSearch<Node> (
            var newPrio = { node : edge.to          ,
                            rank : toCost + newHeur } ;
 
-           var newInfo = { parent    : min.node ,
+           var newInfo = { parent    : edge ,
                            cost      : toCost   ,
                            heuristic : newHeur  ,
                            priority  : newPrio  } ;
@@ -127,20 +127,21 @@ function aStarSearch<Node> (
     var result = frontier.minimum().node;
 
     var cost = explored.getValue(result).cost;
-    var path = [result];
+    var path = [];
 
     while(result != start) {
-      result = explored.getValue(result).parent;
-      path.push(result);
+      edge = explored.getValue(result).parent;
+      path.push(edge);
+      result = edge.from;
     }
     path.reverse();
 
-    //clearTimeout(timer);
+    clearTimeout(timer);
     return {path : path, cost : cost};
 }
 
 class Info<Node> {
-  parent    : Node       ;
+  parent    : Edge<Node> ;
   cost      : number     ;
   heuristic : number     ;
   priority  : Prio<Node> ;
