@@ -77,38 +77,80 @@ module Planner {
       return result;
     }
 
+    class WorldEdge extends Edge<WorldState> {
+          from : WorldState;
+          to   : WorldState;
+          cost : number;
+          cmds : string[];
+    }
+
     function isLegal( rel    : string     ,
                       source : string     ,
                       dest   : string     ,
                       state  : WorldState )
       {return !Interpreter.badLocation(source, {rel:rel, id:dest}, state);}
 
+    function makeCommands (sourceCol : number, destCol : number) : string[] {
+      var result : string[] = [];
+      var atomic = sourceCol < destCol ? "r" : "l";
+
+      var distance = sourceCol - destCol;
+      distance = distance < 0 ? -distance : distance;
+
+      for(var i = 0; i < distance; i ++) {result.push(atomic);}
+
+      return result;
+    }
+
     class searchSpace implements Graph<WorldState> {
-      outgoingEdges = function (state : WorldState) {
-        var result : Edge<WorldState>[] = [];
+      outgoingEdges = function (state : WorldState) : WorldEdge[] {
+        var result : WorldEdge[] = [];
 
-        for (var sourceRow in state.stacks)
-          if(state.stacks[sourceRow].length > 0) {
-              var sourceCol = state.stacks[sourceRow].length - 1;
-              var sourceLast = state.stacks[sourceRow][sourceCol];
+        if (state.holding == null) {
+          for (var sourceCol in state.stacks)
+            if(state.stacks[sourceCol].length > 0) {
+                var sourceRow = state.stacks[sourceCol].length - 1;
+                var sourceLast = state.stacks[sourceCol][sourceRow];
 
-              for (var destRow in state.stacks) {
-                var destCol = state.stacks[destRow].length - 1;
-                var destLast = state.stacks[destRow][destCol];
+                var newState = state;
+                newState.arm = parseInt(sourceCol);
+                newState.holding = sourceLast;
+                newState.stacks[sourceCol].pop();
 
-                  if (  destRow != sourceRow
-                     && (  state.stacks[destRow].length == 0
-                        || isLegal("above", sourceLast, destLast, state) ) ) {
-                     var newState = state;
-                     newState.stacks[sourceRow].pop();
-                     newState.stacks[destRow].push(sourceLast);
+                var commands = [];
+                commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
+                commands.push("p");
 
-                     result.push({from : state, to : newState, cost : 1});
-                  }
-              }
+                result.push( { from : state           ,
+                               to   : newState        ,
+                               cost : commands.length ,
+                               cmds : commands        } );
+            }
           }
+        else { // (state.holding != null) {
+          for (var destCol in state.stacks) {
+            var destRow = state.stacks[destCol].length - 1;
+            var destLast = state.stacks[destCol][destRow];
+            if ( state.stacks[destCol].length == 0
+               || isLegal("above", sourceLast, destLast, state) ) {
+                 var newState = state;
+                 newState.arm = parseInt(destCol);
+                 newState.holding = null;
+                 newState.stacks[destCol].push(state.holding);
 
-          return result;
+                 var commands = [];
+                 commands.concat(makeCommands(state.arm, parseInt(destCol)));
+                 commands.push("d");
+
+                 result.push( { from : state           ,
+                                to   : newState        ,
+                                cost : commands.length ,
+                                cmds : commands        } );
+            }
+          }
+        }
+
+      return result;
       }
 
       compareNodes = function (s1 : WorldState, s2 : WorldState) : number
