@@ -58,96 +58,94 @@ module Planner {
     //////////////////////////////////////////////////////////////////////
     // private functions
 
-    // The following function is a comparison tool, not a pretty
-    // printer. Note that, as no object can enter or exit the world,
-    // a state is completely described by its stacks, as the object
-    // eventually in the arm can be deduced from them.
-    function stringifyState (state : WorldState) : string {
-      var result : string = "";
-
-      for(let row of state.stacks) {
-        for(let obj of row) {result += obj + ",";}
-        result += ";";
-      }
-
-      return result;
-    }
-
+    /*
     class WorldEdge extends Edge<WorldState> {
-          from : WorldState;
-          to   : WorldState;
-          cost : number;
-          cmds : string[];
+        from : WorldState;
+        to   : WorldState;
+        cost : number;
+        cmds : string[];
     }
-
+    */
     function isLegal( rel    : string     ,
                       source : string     ,
                       dest   : string     ,
                       state  : WorldState )
-      {return !Interpreter.badLocation(source, {rel:rel, id:dest}, state);}
+    {
+        return !Interpreter.badLocation(source, {rel:rel, id:dest}, state);}
 
     function makeCommands (sourceCol : number, destCol : number) : string[] {
-      var result : string[] = [];
-      var atomic = sourceCol < destCol ? "r" : "l";
+        var result : string[] = [];
+        var atomic = sourceCol < destCol ? "r" : "l";
 
-      var distance = sourceCol - destCol;
-      distance = distance < 0 ? -distance : distance;
+        var distance = sourceCol - destCol;
+        distance = distance < 0 ? -distance : distance;
 
-      for(var i = 0; i < distance; i ++) {result.push(atomic);}
+        for (var i = 0; i < distance; i ++) {result.push(atomic);}
 
-      return result;
+        return result;
     }
 
     class searchSpace implements Graph<WorldState> {
-      outgoingEdges = function (state : WorldState) : WorldEdge[] {
-        var result : WorldEdge[] = [];
+        outgoingEdges = function (state : WorldState) : Edge<WorldState>[] {
+            var result : Edge<WorldState>[] = [];
 
-        if (state.holding == null) {
-          for (var sourceCol in state.stacks)
-            if(state.stacks[sourceCol].length > 0) {
-                var sourceRow = state.stacks[sourceCol].length - 1;
-                var sourceLast = state.stacks[sourceCol][sourceRow];
+            if (state.holding == null) {
+                for (var sourceCol in state.stacks)
+                    if(state.stacks[sourceCol].length > 0) {
+                        var sourceRow = state.stacks[sourceCol].length - 1;
+                        var sourceLast = state.stacks[sourceCol][sourceRow];
 
-                var newState = state;
-                newState.arm = parseInt(sourceCol);
-                newState.holding = sourceLast;
-                newState.stacks[sourceCol].pop();
+                        var newState : WorldState = {
+                            stacks: cloneStacks(state.stacks),
+                            holding: sourceLast,
+                            arm: parseInt(sourceCol),
+                            objects: state.objects,
+                            examples: state.examples
+                        }
+                        newState.stacks[sourceCol].pop();
 
-                var commands : string[] = [];
-                commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
-                commands.push("p");
+                        var commands : string[] = [];
+                        commands = commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
+                        commands.push("p");
 
-                result.push( { from : state           ,
-                               to   : newState        ,
-                               cost : commands.length ,
-                               cmds : commands        } );
+                        result.push( { from : state           ,
+                                       to   : newState        ,
+                                       cost : commands.length ,
+                                       cmds : commands        } );
+                    }
             }
-          }
-        else { // (state.holding != null) {
-          for (var destCol in state.stacks) {
-            var destRow = state.stacks[destCol].length - 1;
-            var destLast = state.stacks[destCol][destRow];
-            if ( state.stacks[destCol].length == 0
-               || isLegal("above", sourceLast, destLast, state) ) {
-                 var newState = state;
-                 newState.arm = parseInt(destCol);
-                 newState.holding = null;
-                 newState.stacks[destCol].push(state.holding);
+            else { // (state.holding != null) {
+                var heldObj = state.holding;
+                for (var destCol in state.stacks) {
+                    var destRow = state.stacks[destCol].length - 1;
+                    var destLast = state.stacks[destCol][destRow];
+                    if ( state.stacks[destCol].length == 0
+                         || isLegal("ontop", heldObj, destLast, state)
+                         || isLegal("inside", heldObj, destLast, state)
+                       ) {
+                        var newState : WorldState = {
+                            stacks: cloneStacks(state.stacks),
+                            holding: null,
+                            arm: parseInt(destCol),
+                            objects: state.objects,
+                            examples: state.examples
+                        }
+                        newState.stacks[destCol].push(state.holding);
 
-                var commands : string[] = [];
-                 commands.concat(makeCommands(state.arm, parseInt(destCol)));
-                 commands.push("d");
+                        var commands : string[] = [];
+                        commands = commands.concat(makeCommands(state.arm, parseInt(destCol)));
+                        commands.push("d");
 
-                 result.push( { from : state           ,
-                                to   : newState        ,
-                                cost : commands.length ,
-                                cmds : commands        } );
+                        result.push( { from : state           ,
+                                       to   : newState        ,
+                                       cost : commands.length ,
+                                       cmds : commands        } );
+                    }
+                }
             }
-          }
+
+            return result;
         }
-
-      return result;
-      }
 
         compareNodes = function (s1 : WorldState, s2 : WorldState) : number
         {return stringifyState(s1).localeCompare(stringifyState(s2));}
@@ -353,48 +351,24 @@ module Planner {
      * be added using the `push` method.
      */
     function planInterpretation(interpretation : Interpreter.DNFFormula, state : WorldState) : string[] {
-        // This function returns a dummy plan involving a random stack
-        do {
-            var pickstack = Math.floor(Math.random() * state.stacks.length);
-        } while (state.stacks[pickstack].length == 0);
         var plan : string[] = [];
+        var graph = new searchSpace();
+        var startNode = state;
+        var goal = interpretation;
+        var isGoal = (s: WorldState) => isSatisfied(goal,s);
+        var h = (s: WorldState) => heuristic(s,goal);
+        var toStr = (s: WorldState) => stringifyState(s);
 
-        // First move the arm to the leftmost nonempty stack
-        if (pickstack < state.arm) {
-            plan.push("Moving left");
-            for (var i = state.arm; i > pickstack; i--) {
-                plan.push("l");
-            }
-        } else if (pickstack > state.arm) {
-            plan.push("Moving right");
-            for (var i = state.arm; i < pickstack; i++) {
-                plan.push("r");
-            }
-        }
-
-        // Then pick up the object
-        var obj = state.stacks[pickstack][state.stacks[pickstack].length-1];
-        plan.push("Picking up the " + state.objects[obj].form,
-                  "p");
-
-        if (pickstack < state.stacks.length-1) {
-            // Then move to the rightmost stack
-            plan.push("Moving as far right as possible");
-            for (var i = pickstack; i < state.stacks.length-1; i++) {
-                plan.push("r");
-            }
-
-            // Then move back
-            plan.push("Moving back");
-            for (var i = state.stacks.length-1; i > pickstack; i--) {
-                plan.push("l");
+        try {
+            var result = aStarSearch(graph, startNode, isGoal, h, 10,toStr);
+            var planEdges = result.edges;
+            for (let edge of planEdges) {
+                plan = plan.concat(edge.cmds);
             }
         }
-
-        // Finally put it down again
-        plan.push("Dropping the " + state.objects[obj].form,
-                  "d");
-
+        catch (e) {
+            console.log("Planner failure!");
+        }
         return plan;
     }
 

@@ -1,4 +1,3 @@
-
 // Interface definitions for worlds
 
 /**
@@ -33,6 +32,32 @@ interface WorldState {
 }
 
 type Stack = string[];
+
+// The following function is a comparison tool, not a pretty
+// printer. Note that, as no object can enter or exit the world,
+// a state is completely described by its stacks, as the object
+// eventually in the arm can be deduced from them.
+function stringifyState (state : WorldState) : string {
+    var result : string = "";
+
+    for(let row of state.stacks) {
+        for(let obj of row) {result += obj + ",";}
+        result += ";";
+    }
+    return result;
+}
+
+/**
+* A function to deep-copy stacks
+*/
+function cloneStacks (stacks : Stack[]) : Stack[] {
+    var result : Stack[] = [];
+    for(let s of stacks) {
+        var newStack = s.slice();
+        result.push(newStack);
+    }
+    return result
+}
 
 /**
 * Interface for a world. Abstracts over the I/O required to read user

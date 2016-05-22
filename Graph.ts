@@ -11,10 +11,14 @@
 */
 
 /** An edge in a graph. */
-class Edge<Node> {
+interface Edge<Node> {
     from : Node;
     to   : Node;
     cost : number;
+    /** An extension to aid our planner, an edge in a graph of
+     WorldStates contains the sequence of robot arm commands
+    needed to get between the states it connects. */
+    cmds? : string[];
 }
 
 /** A directed graph. */
@@ -55,12 +59,13 @@ function aStarSearch<Node> (
     start : Node,
     goal : (n:Node) => boolean,
     heuristics : (n:Node) => number,
-    timeout : number
+    timeout : number,
+    toStrFunction? : (n:Node) => string
 ) : SearchResult<Node> {
     var failure : SearchResult<Node> = {path : [], edges : [], cost : 0};
-    var timer = setTimeout(function () {return failure;}, timeout * 1000);
+    //var timer = setTimeout(function () {return failure;}, timeout * 1000);
 
-    var explored = new collections.Dictionary<Node, Info<Node>> ();
+    var explored = new collections.Dictionary<Node, Info<Node>> (toStrFunction);
     var frontier = new collections.BSTree<Prio<Node>>
       ( function(x,y) {
           var d = x.rank - y.rank;
@@ -140,7 +145,7 @@ function aStarSearch<Node> (
     path.reverse();
     edges.reverse();
 
-    clearTimeout(timer);
+    //clearTimeout(timer);
     return {path : path, edges : edges, cost : cost};
 }
 
