@@ -145,13 +145,13 @@ function aStarSearch<Node> (
 }
 
 interface Info<Node> {
-  parent?   : Edge<Node> ;
-  cost      : number     ;
-  heuristic : number     ;
-  priority  : Prio<Node> ;
+    parent?   : Edge<Node> ;
+    cost      : number     ;
+    heuristic : number     ;
+    priority  : Prio<Node> ;
 }
 
-class Prio<Node> {
-  node : Node   ;
-  rank : number ;
+interface Prio<Node> {
+    node : Node   ;
+    rank : number ;
 }
