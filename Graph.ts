@@ -28,7 +28,9 @@ interface Graph<Node> {
 /** Type that reports the result of a search. */
 class SearchResult<Node> {
     /** The path (sequence of Nodes) found by the search algorithm. */
-    path : Edge<Node>[];
+    path : Node[];
+    /** The path of edges found by the search. */
+    edges : Edge<Node>[];
     /** The total cost of the path. */
     cost : number;
 }
@@ -55,7 +57,7 @@ function aStarSearch<Node> (
     heuristics : (n:Node) => number,
     timeout : number
 ) : SearchResult<Node> {
-    var failure : SearchResult<Node> = {path : [], cost : 0};
+    var failure : SearchResult<Node> = {path : [], edges : [], cost : 0};
     var timer = setTimeout(function () {return failure;}, timeout * 1000);
 
     var explored = new collections.Dictionary<Node, Info<Node>> ();
@@ -69,8 +71,7 @@ function aStarSearch<Node> (
     var startPrio = { node      : start     ,
                       rank      : startHeur } ;
 
-    var startInfo = { parent    : null       ,
-                      cost      : 0          ,
+    var startInfo = { cost      : 0          ,
                       heuristic : startHeur  ,
                       priority  : startPrio  } ;
 
@@ -78,48 +79,48 @@ function aStarSearch<Node> (
     frontier.add(startPrio);
 
     while(!frontier.isEmpty()) { // FOR EACH NODE IN THE FRONTIER
-      var min = frontier.minimum();
-      if(goal(min.node)) {break;}
+        var min = frontier.minimum();
+        if(goal(min.node)) {break;}
 
-      var minInfo = explored.getValue(min.node);
-      var minEdges = graph.outgoingEdges(min.node);
+        var minInfo = explored.getValue(min.node);
+        var minEdges = graph.outgoingEdges(min.node);
 
-      frontier.remove(min);
-      minInfo.priority = null;
+        frontier.remove(min);
+        minInfo.priority = null;
 
-      for (var edge of minEdges) { // FOR EACH NEIGHBOUR NODE
-        var toCost = minInfo.cost + edge.cost;
-        var toInfo = explored.getValue(edge.to);
+        for (var edge of minEdges) { // FOR EACH NEIGHBOUR NODE
+            var toCost = minInfo.cost + edge.cost;
+            var toInfo = explored.getValue(edge.to);
 
-        if(toInfo != null) { // IF IT HAS BEEN EXPLORED
-          var toPrio = toInfo.priority;
+            if(toInfo != null) { // IF IT HAS BEEN EXPLORED
+                var toPrio = toInfo.priority;
 
-          if (toPrio != null && toInfo.cost > toCost) {
-            explored.remove(edge.to);
-            frontier.remove(toPrio);
+                if (toPrio != null && toInfo.cost > toCost) {
+                    explored.remove(edge.to);
+                    frontier.remove(toPrio);
 
-            toInfo.cost = toCost; toInfo.parent = edge;
-            toPrio.rank = toInfo.cost + toInfo.heuristic;
+                    toInfo.cost = toCost; toInfo.parent = edge;
+                    toPrio.rank = toInfo.cost + toInfo.heuristic;
 
-            explored.setValue(edge.to, toInfo);
-            frontier.add(toPrio);
-          }
+                    explored.setValue(edge.to, toInfo);
+                    frontier.add(toPrio);
+                }
+            }
+            else { // IF IT HAS NOT BEEN EXPLORED
+                var newHeur = heuristics(edge.to);
+
+                var newPrio = { node : edge.to          ,
+                                rank : toCost + newHeur } ;
+
+                var newInfo = { parent    : edge ,
+                                cost      : toCost   ,
+                                heuristic : newHeur  ,
+                                priority  : newPrio  } ;
+
+                explored.setValue(edge.to, newInfo);
+                frontier.add(newPrio);
+            }
         }
-        else { // IF IT HAS NOT BEEN EXPLORED
-           var newHeur = heuristics(edge.to);
-
-           var newPrio = { node : edge.to          ,
-                           rank : toCost + newHeur } ;
-
-           var newInfo = { parent    : edge ,
-                           cost      : toCost   ,
-                           heuristic : newHeur  ,
-                           priority  : newPrio  } ;
-
-           explored.setValue(edge.to, newInfo);
-           frontier.add(newPrio);
-        }
-      }
     }
 
     if(frontier.isEmpty()) return failure;
@@ -127,21 +128,24 @@ function aStarSearch<Node> (
     var result = frontier.minimum().node;
 
     var cost = explored.getValue(result).cost;
-    var path = [];
+    var path : Node[] = [result];
+    var edges : Edge<Node>[] = [];
 
     while(result != start) {
-      edge = explored.getValue(result).parent;
-      path.push(edge);
-      result = edge.from;
+        edge = explored.getValue(result).parent;
+        edges.push(edge);
+        result = edge.from;
+        path.push(result);
     }
     path.reverse();
+    edges.reverse();
 
     clearTimeout(timer);
-    return {path : path, cost : cost};
+    return {path : path, edges : edges, cost : cost};
 }
 
-class Info<Node> {
-  parent    : Edge<Node> ;
+interface Info<Node> {
+  parent?   : Edge<Node> ;
   cost      : number     ;
   heuristic : number     ;
   priority  : Prio<Node> ;
