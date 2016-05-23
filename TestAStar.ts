@@ -47,7 +47,9 @@ function runTest(c: TestCase, useHeuristics: boolean) : boolean {
     }
 
     try {
-        var result = aStarSearch(graph, startnode, isgoal, h, 10);
+        var edges = aStarSearch(graph, startnode, isgoal, h, 10);
+        var result = {path : getPath(startnode, edges), cost : getCost(edges)};
+
         var cost = checkPath(graph, startnode, result.path);
         if (!cost) {
             console.log("The result is not a correct path!");
@@ -147,4 +149,4 @@ if (process.argv.length > 2) {
     console.log("Please give at least one argument:");
     console.log("- either a number>=0 for each test you want to run,");
     console.log("- or 'all' for running all tests.");
-} 
+}

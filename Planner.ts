@@ -1,3 +1,4 @@
+///<reference path="Util.ts"/>
 ///<reference path="World.ts"/>
 ///<reference path="Interpreter.ts"/>
 ///<reference path="Graph.ts"/>
@@ -24,7 +25,10 @@ module Planner {
      * @param currentState The current state of the world.
      * @returns Augments Interpreter.InterpretationResult with a plan represented by a list of strings.
      */
-    export function plan(interpretations : Interpreter.InterpretationResult[], currentState : WorldState) : PlannerResult[] {
+    export function plan (
+       interpretations : Interpreter.InterpretationResult[],
+       currentState : WorldState
+    ) : PlannerResult[] {
         var errors : Error[] = [];
         var plans : PlannerResult[] = [];
         interpretations.forEach((interpretation) => {
@@ -66,12 +70,6 @@ module Planner {
         cmds : string[];
     }
     */
-    function isLegal( rel    : string     ,
-                      source : string     ,
-                      dest   : string     ,
-                      state  : WorldState )
-    {
-        return !Interpreter.badLocation(source, {rel:rel, id:dest}, state);}
 
     function makeCommands (sourceCol : number, destCol : number) : string[] {
         var result : string[] = [];
@@ -85,9 +83,13 @@ module Planner {
         return result;
     }
 
-    class searchSpace implements Graph<WorldState> {
-        outgoingEdges = function (state : WorldState) : Edge<WorldState>[] {
-            var result : Edge<WorldState>[] = [];
+    class SearchEdge extends Edge<WorldState> {
+      cmds : string[];
+    }
+
+    class SearchSpace implements Graph<WorldState> {
+        outgoingEdges = function (state : WorldState) : SearchEdge[] {
+            var result : SearchEdge[] = [];
 
             if (state.holding == null) {
                 for (var sourceCol in state.stacks)
@@ -96,7 +98,7 @@ module Planner {
                         var sourceLast = state.stacks[sourceCol][sourceRow];
 
                         var newState : WorldState = {
-                            stacks: cloneStacks(state.stacks),
+                            stacks: cloneMatrix(state.stacks),
                             holding: sourceLast,
                             arm: parseInt(sourceCol),
                             objects: state.objects,
@@ -120,11 +122,11 @@ module Planner {
                     var destRow = state.stacks[destCol].length - 1;
                     var destLast = state.stacks[destCol][destRow];
                     if ( state.stacks[destCol].length == 0
-                         || isLegal("ontop", heldObj, destLast, state)
-                         || isLegal("inside", heldObj, destLast, state)
+                         || againstPhysics("ontop", heldObj, destLast, state)
+                         || againstPhysics("inside", heldObj, destLast, state)
                        ) {
                         var newState : WorldState = {
-                            stacks: cloneStacks(state.stacks),
+                            stacks: cloneMatrix(state.stacks),
                             holding: null,
                             arm: parseInt(destCol),
                             objects: state.objects,
@@ -352,7 +354,7 @@ module Planner {
      */
     function planInterpretation(interpretation : Interpreter.DNFFormula, state : WorldState) : string[] {
         var plan : string[] = [];
-        var graph = new searchSpace();
+        var graph = new SearchSpace();
         var startNode = state;
         var goal = interpretation;
         var isGoal = (s: WorldState) => isSatisfied(goal,s);
@@ -360,9 +362,8 @@ module Planner {
         var toStr = (s: WorldState) => stringifyState(s);
 
         try {
-            var result = aStarSearch(graph, startNode, isGoal, h, 10,toStr);
-            var planEdges = result.edges;
-            for (let edge of planEdges) {
+            var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10);
+            for (let edge of result) {
                 plan = plan.concat(edge.cmds);
             }
         }

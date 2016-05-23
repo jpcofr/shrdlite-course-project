@@ -1,85 +1,58 @@
+///<reference path="Util.ts"/>
 ///<reference path="World.ts"/>
 ///<reference path="Parser.ts"/>
 
-/**
-* Interpreter module
-*
-* The goal of the Interpreter module is to interpret a sentence
-* written by the user in the context of the current world state. In
-* particular, it must figure out which objects in the world,
-* i.e. which elements in the `objects` field of WorldState, correspond
-* to the ones referred to in the sentence.
-*
-* Moreover, it has to derive what the intended goal state is and
-* return it as a logical formula described in terms of literals, where
-* each literal represents a relation among objects that should
-* hold. For example, assuming a world state where "a" is a ball and
-* "b" is a table, the command "put the ball on the table" can be
-* interpreted as the literal ontop(a,b). More complex goals can be
-* written using conjunctions and disjunctions of these literals.
-*
-* In general, the module can take a list of candidates parses and return
-* a list of candidates interpretations, but the code to handle this has
-* already been written for you. The only part you need to implement is
-* the core interpretation function, namely `interpretCommand`, which produces a
-* single interpretation for a single command.
-*/
+/*** Interpreter module. ***/
+
 module Interpreter {
 
-    //////////////////////////////////////////////////////////////////////
-    // exported functions, classes and interfaces/types
+    /*** Public part. ***/
 
-    /**
-    Top-level function for the Interpreter. It calls `interpretCommand` for each candidates parse of the command. No need to change this one.
-    * @param parses List of parses produced by the Parser.
-    * @param currentState The current state of the world.
-    * @returns Augments ParseResult with a list of interpretations. Each interpretation is represented by a list of Literals.
-    */
-    export function interpret(parses: Parser.ParseResult[], currentState: WorldState): InterpretationResult[] {
-        var errors: Error[] = [];
-        var interpretations: InterpretationResult[] = [];
-        parses.forEach((parseresult) => {
+    /* Top-level function for the Interpreter */
+    export function interpret ( parses : Parser.ParseResult[] ,
+                                currentState : WorldState     )
+    : InterpretationResult[] {
+        var errors = [];
+        var interpretations = [];
+        parses.forEach((parseResult) => {
             try {
-                var result: InterpretationResult = <InterpretationResult>parseresult;
-                result.interpretation = interpretCommand(result.parse, currentState);
-                if(result.interpretation.length>0){
+                var result = <InterpretationResult> parseResult;
+                result.interpretation = interpretCommand( result.parse ,
+                                                          currentState );
+                if(result.interpretation.length > 0) {
                     interpretations.push(result);
                 }
             } catch (err) {
                 errors.push(err);
             }
         });
-        if (interpretations.length) {
+        if (interpretations.length > 0) {
             return interpretations;
         } else {
-            // only throw the first error found
-            throw errors[0];
+            throw errors[0]; // THROW THE FIRST ERROR FOUND
         }
     }
 
     export interface InterpretationResult extends Parser.ParseResult {
-        interpretation: DNFFormula;
+        interpretation : DNFFormula;
     }
 
-    export type DNFFormula = Conjunction[];
-    type Conjunction = Literal[];
+    // Alias for formulae in disjunctive NF.
+    export type DNFFormula  = Conjunction[];
 
-    /**
-    * A Literal represents a relation that is intended to
-    * hold among some objects.
-    */
+    // Alias for a conjunctions of literals.
+    export type Conjunction = Literal[];
+
+    // A Literal represents a relation that is intended to
+    // hold among some objects.
     export interface Literal {
-        /** Whether this literal asserts the relation should hold
-         * (true polarity) or not (false polarity). For example, we
-         * can specify that "a" should *not* be on top of "b" by the
-         * literal {polarity: false, relation: "ontop", args:
-         * ["a","b"]}.
-         */
+        // When true, negates the "relation" field.
         polarity: boolean;
-        /** The name of the relation in question. */
+        // The name of the relation in question.
         relation: string;
-        /** The arguments to the relation. Usually these will be either objects
-         * or special strings such as "floor" or "floor-N" (where N is a column) */
+        // The arguments to the relation. Usually these will be either
+        // objects // or special strings such as "floor" or "floor-N"
+        // (where N is a column).
         args: string[];
     }
 
@@ -94,87 +67,55 @@ module Interpreter {
     }
 
     export function stringifyLiteral(lit: Literal): string {
-        return (lit.polarity ? "" : "-") + lit.relation + "(" + lit.args.join(",") + ")";
+        return (lit.polarity ? "" : "-") +
+               lit.relation              +
+               "("                       +
+               lit.args.join(",")        +
+               ")"                       ;
     }
 
-    //////////////////////////////////////////////////////////////////////
-    // Comparators
-
-    function compareLiteral(l1 : Literal, l2 :Literal) : number {
+    // Literal comparator.
+    export function compareLiteral(l1 : Literal, l2 :Literal) : number {
         return stringifyLiteral(l1).localeCompare(stringifyLiteral(l2));
     }
 
-    function compareConjunction(c1 : Conjunction, c2 :Conjunction) : number {
+    // Conjunction comparator.
+    export function compareConjunction(c1 : Conjunction, c2 :Conjunction) : number {
         return stringifyConjunction(c1).localeCompare(stringifyConjunction(c2))
     }
 
-    //////////////////////////////////////////////////////////////////////
-    // Sorting-based algorithms
+    /*** Private part. ***/
 
-   /**
-    * Sorts the input list and removes duplicates
-    */
-    function unique(xs : any[], cmp : (x:any, y:any) => number) : any[] {
-        var sorted : any[] = xs.sort(cmp);
-        var result : any[] = [];
-
-        for(var i = 0; i < sorted.length - 1; i++)
-            if(cmp(sorted[i], sorted[i + 1]) != 0)
-                {result.push(sorted[i]);}
-
-        if(sorted.length > 0)
-            {result.push(sorted[sorted.length - 1]);}
-
-        return result;
-    }
-
-   /**
-    * Computes the intersection of two lists
-    */
-    function intersect(xs : any[], ys : any[], cmp : (x:any, y:any) => number) {
-        var sorted1 : any[] = xs.sort(cmp);
-        var sorted2 : any[] = ys.sort(cmp);
-        var result  : any[] = [];
-
-        for(var i = 0, j = 0; i < sorted1.length && j < sorted2.length;) {
-            var r = cmp(sorted1[i], sorted2[j]);
-            if (r == 0) {result.push(sorted1[i]); i++; j++;}
-            else {r == -1 ? i++ : j++;}
-        }
-
-        return result;
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // Type Synonyms
-
-    /**
-     * A relative location
-     */
+    // A relative location.
     type Location = {rel: string, id: string};
 
-    /**
-     * The additional information that turns the oronTests
-     iginal parse tree into
-     * its augmented counterpart.
-     */
+    // The additional information that turns the original parse tree
+    // into its augmented counterpart.
     type ObjectInfo = string[];
     type EntityInfo = string[];
-    type LocationInfo =  Location[];
+    type LocationInfo = Location[];
     type CommandInfo = DNFFormula;
 
-    //////////////////////////////////////////////////////////////////////
-    // private functions
+    // Checks wether placing an object into a location goes against
+    // physical laws.
+    function badPlacement ( obj : string        ,
+                            loc   : Location    ,
+                            state  : WorldState ) {
+        return againstPhysics(loc.rel, obj, loc.id, state);
+    }
 
-    /**
-     * The core interpretation function.
-     * @param cmd The actual command. Note that it is *not* a string, but rather an object of type `Command` (as it has been parsed by the parser).
-     * @param state The current state of the world. Useful to look up objects in the world.
-     * @returns A list of list of Literal, representing a formula in disjunctive normal form (disjunction of conjunctions).
-     * @throws An error when no valid interpretations can be found
-     * TODO : throw an error when no valid interpretation (then our changes to the interpret function may be unnecessary?)
-     */
-    function interpretCommand(cmd: Parser.Command, state: WorldState): CommandInfo {
+    // The core interpretation function.
+    // @param cmd The actual command. Note that it is *not* a string,
+    //    but rather an object of type `Command` (as it has been parsed
+    //    by the parser).
+    // @param state The current state of the world. Useful to look up
+    //    objects in the world.
+    // @returns A list of list of Literal, representing a formula in
+    //   disjunctive normal form (disjunction of conjunctions).
+    // @throws An error when no valid interpretations can be found
+    function interpretCommand ( cmd : Parser.Command ,
+                                state : WorldState   )
+    : CommandInfo {
         var result: CommandInfo = [];
 
         if (cmd.command == "take") {
@@ -186,7 +127,7 @@ module Interpreter {
         }
         else if (!cmd.entity) {
             for (let loc of interpretLocation(cmd.location, state)) {
-                if (!badLocation(state.holding,loc,state)) {
+                if (!badPlacement(state.holding,loc,state)) {
                     result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
                 }
             }
@@ -194,7 +135,7 @@ module Interpreter {
         else { // command is either "put" or "move"
             for (let ent of interpretEntity(cmd.entity, state)) {
                 for (let loc of interpretLocation(cmd.location, state)) {
-                    if (!badLocation(ent,loc,state)) {
+                    if (!badPlacement(ent,loc,state)) {
                       result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
                     }
                 }
@@ -202,48 +143,13 @@ module Interpreter {
         }
 
         for (var i = 0; i < result.length; i++) {
-            result[i] = unique(result[i], compareLiteral);
+            result[i] = uniqueSort(result[i], compareLiteral);
         }
-        result = unique(result, compareConjunction);
+        result = uniqueSort(result, compareConjunction);
 
         return result;
     }
 
-    /**
-    * Checks whether placing the given object in the given location follows the physical laws
-    */
-    export function badLocation(obj: string, loc: Location, state: WorldState) {
-        return  obj == loc.id
-            || loc.rel == "ontop"  && state.objects[obj].form == "ball"
-                                   && loc.id != "floor"
-            || loc.rel == "inside" && state.objects[loc.id].form != "box"
-
-            || loc.rel == "inside" && state.objects[loc.id].size == state.objects[obj].size
-                                   && (state.objects[obj].form == "pyramid"
-                                      || state.objects[obj].form == "plank"
-                                      || state.objects[obj].form == "box")
-            || loc.rel == "ontop"  && loc.id != "floor"
-                                   && (state.objects[loc.id].form == "ball"
-                                      || state.objects[loc.id].form == "box")
-            || (loc.rel == "inside" || loc.rel == "ontop" || loc.rel == "above")
-                                  && loc.id != "floor"
-                                  && state.objects[loc.id].size == "small"
-                                  && state.objects[obj].size    == "large"
-            || loc.rel == "under" && obj != "floor"
-                                  && state.objects[loc.id].size == "large"
-                                  && state.objects[obj].size    == "small"
-            || loc.rel == "under" && loc.id == "floor"
-            || loc.rel == "ontop" && state.objects[obj].form == "box"
-                                  && state.objects[obj].size == "small"
-                                  && loc.id != "floor"
-                                  && state.objects[loc.id].size == "small"
-                                  && (state.objects[loc.id].form == "pyramid"
-                                      || state.objects[loc.id].form == "brick")
-            || loc.rel == "ontop" && state.objects[obj].form == "box"
-                                  && state.objects[obj].size == "large"
-                                  && loc.id != "floor"
-                                  && state.objects[loc.id].form == "pyramid"
-    }
     /**
     * Checks whether an object with the given id is in the world stacks or arm
     */

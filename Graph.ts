@@ -1,27 +1,16 @@
 ///<reference path="lib/collections.ts"/>
 ///<reference path="lib/node.d.ts"/>
 
-/** Graph module
-*
-*  Types for generic A\* implementation.
-*
-*  *NB.* The only part of this module
-*  that you should change is the `aStarSearch` function. Everything
-*  else should be used as-is.
-*/
+/***  Types for generic A\* implementation. ***/
 
-/** An edge in a graph. */
-interface Edge<Node> {
+// An edge in a graph.
+class Edge<Node> {
     from : Node;
     to   : Node;
     cost : number;
-    /** An extension to aid our planner, an edge in a graph of
-     WorldStates contains the sequence of robot arm commands
-    needed to get between the states it connects. */
-    cmds? : string[];
 }
 
-/** A directed graph. */
+// A directed graph.
 interface Graph<Node> {
     /** Computes the edges that leave from a node. */
     outgoingEdges(node : Node) : Edge<Node>[];
@@ -29,43 +18,31 @@ interface Graph<Node> {
     compareNodes : collections.ICompareFunction<Node>;
 }
 
-/** Type that reports the result of a search. */
-class SearchResult<Node> {
-    /** The path (sequence of Nodes) found by the search algorithm. */
-    path : Node[];
-    /** The path of edges found by the search. */
-    edges : Edge<Node>[];
-    /** The total cost of the path. */
-    cost : number;
-}
+// The result of an A\* search.
+type SearchResult<Node> = Edge<Node>[];
 
-/**
-* A\* search implementation, parameterised by a `Node` type. The code
-* here is just a template; you should rewrite this function
-* entirely. In this template, the code produces a dummy search result
-* which just picks the first possible neighbour.
-*
-* Note that you should not change the API (type) of this function,
-* only its body.
-* @param graph The graph on which to perform A\* search.
-* @param start The initial node.
-* @param goal A function that returns true when given a goal node. Used to determine if the algorithm has reached the goal.
-* @param heuristics The heuristic function. Used to estimate the cost of reaching the goal from a given Node.
-* @param timeout Maximum time (in seconds) to spend performing A\* search.
-* @returns A search result, which contains the path from `start` to a node satisfying `goal` and the cost of this path.
-*/
-function aStarSearch<Node> (
-    graph : Graph<Node>,
-    start : Node,
-    goal : (n:Node) => boolean,
-    heuristics : (n:Node) => number,
-    timeout : number,
-    toStrFunction? : (n:Node) => string
-) : SearchResult<Node> {
-    var failure : SearchResult<Node> = {path : [], edges : [], cost : 0};
-    //var timer = setTimeout(function () {return failure;}, timeout * 1000);
+/*** A\* search implementation. ***/
 
-    var explored = new collections.Dictionary<Node, Info<Node>> (toStrFunction);
+// Search function, parameterised by a `Node` type.
+//   @param graph The graph on which to perform A\* search.
+//   @param start The initial node.
+//   @param goal A function that returns true when given a goal node.
+//      Used to determine if the algorithm has reached the goal.
+//   @param heuristics The heuristic function. Used to estimate
+//      the cost of reachEdge<Node>[]ing the goal from a given Node.
+//   @param timeout Maximum time (in seconds) to spend performing A\*
+//      search.
+//   @returns The list of edges that brings from the start node to
+//            a goal node, or null if such path does not exists.
+function aStarSearch<Node> ( graph : Graph<Node>             ,
+                             start : Node                    ,
+                             goal : (n:Node) => boolean      ,
+                             heuristics : (n:Node) => number ,
+                             timeout : number                )
+: SearchResult<Node> {
+    var timer = setTimeout(function () {return null;}, timeout * 1000);
+
+    var explored = new collections.Dictionary<Node, Info<Node>> ();
     var frontier = new collections.BSTree<Prio<Node>>
       ( function(x,y) {
           var d = x.rank - y.rank;
@@ -76,32 +53,35 @@ function aStarSearch<Node> (
     var startPrio = { node      : start     ,
                       rank      : startHeur } ;
 
-    var startInfo = { cost      : 0          ,
-                      heuristic : startHeur  ,
-                      priority  : startPrio  } ;
+    var startInfo = { parent    : <Edge<Node>> null ,
+                      cost      : 0                 ,
+                      heuristic : startHeur         ,
+                      priority  : startPrio         } ;
 
     explored.setValue(start, startInfo);
     frontier.add(startPrio);
 
-    while(!frontier.isEmpty()) { // FOR EACH NODE IN THE FRONTIER
-        var min = frontier.minimum();
-        if(goal(min.node)) {break;}
+    while (!frontier.isEmpty()) { // FOR EACH NODE IN THE FRONTIER
+        var min = frontier.minimum ();
+        if (goal(min.node)) {break;}
 
         var minInfo = explored.getValue(min.node);
         var minEdges = graph.outgoingEdges(min.node);
 
-        frontier.remove(min);
+        frontier.remove (min);
         minInfo.priority = null;
 
         for (var edge of minEdges) { // FOR EACH NEIGHBOUR NODE
+            var toNode = edge.to;
             var toCost = minInfo.cost + edge.cost;
-            var toInfo = explored.getValue(edge.to);
+            var toInfo = explored.getValue (toNode);
 
             if(toInfo != null) { // IF IT HAS BEEN EXPLORED
                 var toPrio = toInfo.priority;
 
-                if (toPrio != null && toInfo.cost > toCost) {
-                    explored.remove(edge.to);
+                if (  toPrio != null // IF IT IS IN THE FRONTIER
+                   && toInfo.cost > toCost ) { // IF WE FOUND A SHORTER PATH
+                    explored.remove(toNode);
                     frontier.remove(toPrio);
 
                     toInfo.cost = toCost; toInfo.parent = edge;
@@ -114,49 +94,71 @@ function aStarSearch<Node> (
             else { // IF IT HAS NOT BEEN EXPLORED
                 var newHeur = heuristics(edge.to);
 
-                var newPrio = { node : edge.to          ,
+                var newPrio = { node : toNode           ,
                                 rank : toCost + newHeur } ;
 
-                var newInfo = { parent    : edge ,
+                var newInfo = { parent    : edge     ,
                                 cost      : toCost   ,
                                 heuristic : newHeur  ,
                                 priority  : newPrio  } ;
 
-                explored.setValue(edge.to, newInfo);
+                explored.setValue(toNode, newInfo);
                 frontier.add(newPrio);
             }
         }
     }
 
-    if(frontier.isEmpty()) return failure;
+    if(frontier.isEmpty()) return null;
 
-    var result = frontier.minimum().node;
+    var cursor = frontier.minimum().node;
+    var result = <SearchResult<Node>> [];
 
-    var cost = explored.getValue(result).cost;
-    var path : Node[] = [result];
-    var edges : Edge<Node>[] = [];
-
-    while(result != start) {
-        edge = explored.getValue(result).parent;
-        edges.push(edge);
-        result = edge.from;
-        path.push(result);
+    while(cursor != start) {
+        edge = explored.getValue(cursor).parent;
+        result.push(edge);
+        cursor = edge.from;
     }
-    path.reverse();
-    edges.reverse();
 
-    //clearTimeout(timer);
-    return {path : path, edges : edges, cost : cost};
+    result.reverse();
+
+    clearTimeout(timer);
+    return result;
 }
 
+// Data associated to each explored node.
 interface Info<Node> {
-    parent?   : Edge<Node> ;
+    parent    : Edge<Node> ;
     cost      : number     ;
     heuristic : number     ;
     priority  : Prio<Node> ;
 }
 
+// An entry of the priority queue.
 interface Prio<Node> {
     node : Node   ;
     rank : number ;
+}
+
+/*** Edge-related utility functions. ***/
+
+// Computes the list of nodes along a given path.
+function getPath<Node> (start : Node, edges : Edge<Node>[]) : Node[] {
+  var result = [start];
+
+  for(var edge of edges) {
+    result.push(edge.to);
+  }
+
+  return result;
+}
+
+// Computes the cost of a given path.
+function getCost<Node> (edges : Edge<Node>[]) : number {
+  var result = 0;
+
+  for(var edge of edges) {
+    result += edge.cost;
+  }
+
+  return result;
 }
