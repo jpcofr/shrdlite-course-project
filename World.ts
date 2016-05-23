@@ -59,7 +59,7 @@ function stringifyState (state : WorldState) : string {
 
     for(var row of state.stacks) {
         for(var obj of row) {
-          result += obj + ",";
+            result += obj + ",";
         }
         result += ";";
     }

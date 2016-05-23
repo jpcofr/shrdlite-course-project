@@ -44,9 +44,8 @@ function aStarSearch<Node> ( graph : Graph<Node>             ,
 
     var explored = new collections.Dictionary<Node, Info<Node>> ();
     var frontier = new collections.BSTree<Prio<Node>>
-      ( function(x,y) {
-          var d = x.rank - y.rank;
-          return d != 0 ? d : graph.compareNodes(x.node, y.node); } );
+      ( (x, y) => { var d = x.rank - y.rank;
+                    return d != 0 ? d : graph.compareNodes(x.node, y.node); } );
 
     var startHeur = heuristics(start);
 
@@ -143,22 +142,22 @@ interface Prio<Node> {
 
 // Computes the list of nodes along a given path.
 function getPath<Node> (start : Node, edges : Edge<Node>[]) : Node[] {
-  var result = [start];
+    var result = [start];
 
-  for(var edge of edges) {
-    result.push(edge.to);
-  }
+    for(var edge of edges) {
+        result.push(edge.to);
+    }
 
-  return result;
+    return result;
 }
 
 // Computes the cost of a given path.
 function getCost<Node> (edges : Edge<Node>[]) : number {
-  var result = 0;
+    var result = 0;
 
-  for(var edge of edges) {
-    result += edge.cost;
-  }
+    for(var edge of edges) {
+        result += edge.cost;
+    }
 
-  return result;
+    return result;
 }
