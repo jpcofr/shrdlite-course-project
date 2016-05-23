@@ -9,7 +9,7 @@ function cloneMatrix (matrix : any[][]) : any[][] {
 }
 
 // Computes the sorted, duplicate-free version of a list.
-function uniqueSort ( xs : any[]                    ,
+function uniqueSort ( xs : any[]                     ,
                       cmp : (x:any, y:any) => number )
 : any[] {
     var sorted = xs.slice().sort(cmp);
