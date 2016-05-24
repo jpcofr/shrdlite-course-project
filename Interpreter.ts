@@ -135,25 +135,54 @@ module Interpreter {
         }
         else { // MOVE AN OBJECT SOMEWHERE
             if(cmd.entity.quantifier == "any") {
-                for (let ent of interpretEntity(cmd.entity, state)) {
-                    for (let loc of interpretLocation(cmd.location, state)) {
+                for (let loc of interpretLocation(cmd.location, state)) {
+                    for (let ent of interpretEntity(cmd.entity, state)) {
                         if (!badPlacement(ent,loc,state)) {
                           result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
                         }
                     }
                 }
             }
-            else if(cmd.entity.quantifier == "all") {
-                var conjunction = <Conjunction> [];
+            if(cmd.entity.quantifier == "all") {
+                var conjunction = <Literal[][]> [];
+
                 for (let ent of interpretEntity(cmd.entity, state)) {
+                    var disjunction = <Literal[]> [];
+
                     for (let loc of interpretLocation(cmd.location, state)) {
                         if (!badPlacement(ent,loc,state)) {
-                          conjunction.push({polarity: true, relation: loc.rel, args: [ent, loc.id]});
+                            disjunction.push({polarity: true, relation: loc.rel, args: [ent, loc.id]});
                         }
                     }
-                result.push(conjunction);
+
+                    conjunction.push(disjunction);
                 }
+
+                result = result.concat(cnfToDnf(conjunction));
             }
+        }
+
+        // Computes a DNF formula equivalent to the given CNF one.
+        function cnfToDnf(formula : Literal[][]) : DNFFormula {
+            if(formula.length == 0) {return [[]];}
+            if(formula[0].length == 0) {return [];}
+
+            var headHead = formula[0][0];
+            var noHeadHead = formula.slice(); noHeadHead[0].shift();
+            var tail = formula.slice(); tail.shift();
+
+            var ifTrue = cnfToDnf(tail);
+            var ifFalse = cnfToDnf(noHeadHead);
+
+            var positive = headHead;
+            var negative = { polarity : ! positive.polarity ,
+                             relation : positive.relation   ,
+                             args     : positive.args       } ;
+
+            for(var t of ifTrue)  {t.push(positive);}
+            for(var t of ifFalse) {t.push(negative);}
+
+            return ifTrue.concat(ifFalse);
         }
 
         for (var i = 0; i < result.length; i++) {
