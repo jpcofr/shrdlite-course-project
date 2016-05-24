@@ -2,7 +2,7 @@
 
 // A function to clone matrices.
 function cloneMatrix (matrix : any[][]) : any[][] {
-    var newMatrix = [];
+    var newMatrix : any[] = [];
     for(var row of matrix) {newMatrix.push(row.slice());}
 
     return newMatrix;
@@ -13,7 +13,7 @@ function uniqueSort ( xs : any[]                     ,
                       cmp : (x:any, y:any) => number )
 : any[] {
     var sorted = xs.slice().sort(cmp);
-    var result = [];
+    var result : any[] = [];
 
     for(var i = 0; i < sorted.length - 1; i++)
         if(cmp(sorted[i], sorted[i + 1]) != 0)
@@ -32,7 +32,7 @@ function uniqueIntersect ( xs : any[]                     ,
 : any[] {
     var sorted1 = xs.slice().sort(cmp);
     var sorted2 = ys.slice().sort(cmp);
-    var result  = [];
+    var result : any[] = [];
 
     for(var i = 0, j = 0; i < sorted1.length && j < sorted2.length;) {
         var t1 = sorted1[i];
