@@ -120,9 +120,10 @@ module Interpreter {
 
         if (cmd.command == "take") {
             for (let ent of interpretEntity(cmd.entity, state)) {
-                if (ent != state.holding) {
-                    result.push([{polarity: true, relation: "holding", args: [ent]}]);
-                }
+                // We are conforming to the example that runs on the website,
+                // which is in contrast with one interpretation test.
+                // Conforming to tests would need : if (ent != state.holding)
+                result.push([{polarity: true, relation: "holding", args: [ent]}]);
             }
         }
         else if (!cmd.entity) {
