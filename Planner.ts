@@ -85,6 +85,7 @@ module Planner {
 
     class SearchEdge extends Edge<WorldState> {
       cmds : string[];
+      description : string;
     }
 
     class SearchSpace implements Graph<WorldState> {
@@ -113,7 +114,9 @@ module Planner {
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
-                                       cmds : commands        } );
+                                       cmds : commands,
+                                       description: generateDescription(sourceLast,true)
+                                   } );
                     }
             }
             else { // (state.holding != null) {
@@ -141,7 +144,9 @@ module Planner {
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
-                                       cmds : commands        } );
+                                       cmds : commands,
+                                       description: generateDescription(heldObj,false)
+                                    } );
                     }
                 }
             }
@@ -151,6 +156,20 @@ module Planner {
 
         compareNodes = function (s1 : WorldState, s2 : WorldState) : number
         {return stringifyState(s1).localeCompare(stringifyState(s2));}
+    }
+
+    function generateDescription(id:string, isPicking:boolean) : string {
+        var newDescription = "";
+        //find object description
+
+        var objectDescription = "";
+        if (isPicking){
+            newDescription = "taking the ";
+        }else{
+            newDescription = "droping the ";
+        }
+        newDescription +=  objectDescription;
+        return newDescription;
     }
 
     /**
