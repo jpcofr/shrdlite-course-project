@@ -134,7 +134,7 @@ module Interpreter {
             }
         }
         else { // MOVE AN OBJECT SOMEWHERE
-            if(cmd.entity.quantifier == "any") {
+            if(cmd.entity.quantifier == "any" || cmd.entity.quantifier == "the") {
                 for (let loc of interpretLocation(cmd.location, state)) {
                     for (let ent of interpretEntity(cmd.entity, state)) {
                         if (!badPlacement(ent,loc,state)) {
