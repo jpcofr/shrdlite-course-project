@@ -122,8 +122,8 @@ module Planner {
                     var destRow = state.stacks[destCol].length - 1;
                     var destLast = state.stacks[destCol][destRow];
                     if ( state.stacks[destCol].length == 0
-                         || againstPhysics("ontop", heldObj, destLast, state)
-                         || againstPhysics("inside", heldObj, destLast, state)
+                         || !againstPhysics("ontop", heldObj, destLast, state)
+                         || !againstPhysics("inside", heldObj, destLast, state)
                        ) {
                         var newState : WorldState = {
                             stacks: cloneMatrix(state.stacks),

@@ -12,8 +12,8 @@ module Interpreter {
     export function interpret ( parses : Parser.ParseResult[] ,
                                 currentState : WorldState     )
     : InterpretationResult[] {
-        var errors : any[] = [];
-        var interpretations : InterpretationResult[] = [];
+        var errors = <any[]> [];
+        var interpretations = <InterpretationResult[]> [];
         parses.forEach((parseResult) => {
             try {
                 var result = <InterpretationResult> parseResult;
