@@ -362,7 +362,7 @@ module Planner {
         var toStr = (s: WorldState) => stringifyState(s);
 
         try {
-            var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10);
+            var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10, toStr);
             for (let edge of result) {
                 plan = plan.concat(edge.cmds);
             }

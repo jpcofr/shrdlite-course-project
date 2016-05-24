@@ -38,11 +38,12 @@ function aStarSearch<Node> ( graph : Graph<Node>             ,
                              start : Node                    ,
                              goal : (n:Node) => boolean      ,
                              heuristics : (n:Node) => number ,
-                             timeout : number                )
+                             timeout : number,
+                             toStrFunction? : (n:Node) => string)
 : SearchResult<Node> {
     var timer = setTimeout(function () {return null;}, timeout * 1000);
 
-    var explored = new collections.Dictionary<Node, Info<Node>> ();
+    var explored = new collections.Dictionary<Node, Info<Node>> (toStrFunction);
     var frontier = new collections.BSTree<Prio<Node>>
       ( (x, y) => { var d = x.rank - y.rank;
                     return d != 0 ? d : graph.compareNodes(x.node, y.node); } );
