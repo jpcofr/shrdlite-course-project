@@ -32,18 +32,20 @@ type SearchResult<Node> = Edge<Node>[];
 //      the cost of reachEdge<Node>[]ing the goal from a given Node.
 //   @param timeout Maximum time (in seconds) to spend performing A\*
 //      search.
+//   @param stringize Function to convert nodes into unique string
+//      representations.
 //   @returns The list of edges that brings from the start node to
 //            a goal node, or null if such path does not exists.
 function aStarSearch<Node> ( graph : Graph<Node>             ,
                              start : Node                    ,
                              goal : (n:Node) => boolean      ,
                              heuristics : (n:Node) => number ,
-                             timeout : number,
-                             toStrFunction? : (n:Node) => string)
+                             timeout : number                ,
+                             stringize? : (n:Node) => string )
 : SearchResult<Node> {
     var timer = setTimeout(function () {return null;}, timeout * 1000);
 
-    var explored = new collections.Dictionary<Node, Info<Node>> (toStrFunction);
+    var explored = new collections.Dictionary<Node, Info<Node>> (stringize);
     var frontier = new collections.BSTree<Prio<Node>>
       ( (x, y) => { var d = x.rank - y.rank;
                     return d != 0 ? d : graph.compareNodes(x.node, y.node); } );
