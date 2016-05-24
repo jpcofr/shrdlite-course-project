@@ -118,7 +118,7 @@ module Interpreter {
     : CommandInfo {
         var result: CommandInfo = [];
 
-        if (cmd.command == "take") {
+        if (cmd.command == "take") { // TAKE AN OBJECT INTO THE ARM
             for (let ent of interpretEntity(cmd.entity, state)) {
                 // We are conforming to the example that runs on the website,
                 // which is in contrast with one interpretation test.
@@ -126,19 +126,32 @@ module Interpreter {
                 result.push([{polarity: true, relation: "holding", args: [ent]}]);
             }
         }
-        else if (!cmd.entity) {
+        else if (!cmd.entity) { // PUT THE OBJECT IN THE ARM SOMEWHERE
             for (let loc of interpretLocation(cmd.location, state)) {
                 if (!badPlacement(state.holding,loc,state)) {
                     result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
                 }
             }
         }
-        else { // command is either "put" or "move"
-            for (let ent of interpretEntity(cmd.entity, state)) {
-                for (let loc of interpretLocation(cmd.location, state)) {
-                    if (!badPlacement(ent,loc,state)) {
-                      result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
+        else { // MOVE AN OBJECT SOMEWHERE
+            if(cmd.entity.quantifier == "any") {
+                for (let ent of interpretEntity(cmd.entity, state)) {
+                    for (let loc of interpretLocation(cmd.location, state)) {
+                        if (!badPlacement(ent,loc,state)) {
+                          result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
+                        }
                     }
+                }
+            }
+            else if(cmd.entity.quantifier == "all") {
+                var conjunction = <Conjunction> [];
+                for (let ent of interpretEntity(cmd.entity, state)) {
+                    for (let loc of interpretLocation(cmd.location, state)) {
+                        if (!badPlacement(ent,loc,state)) {
+                          conjunction.push({polarity: true, relation: loc.rel, args: [ent, loc.id]});
+                        }
+                    }
+                result.push(conjunction);
                 }
             }
         }
