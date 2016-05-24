@@ -89,12 +89,12 @@ function aStarSearch<Node> ( graph : Graph<Node>             ,
                     toInfo.cost = toCost; toInfo.parent = edge;
                     toPrio.rank = toInfo.cost + toInfo.heuristic;
 
-                    explored.setValue(edge.to, toInfo);
+                    explored.setValue(toNode, toInfo);
                     frontier.add(toPrio);
                 }
             }
             else { // IF IT HAS NOT BEEN EXPLORED
-                var newHeur = heuristics(edge.to);
+                var newHeur = heuristics(toNode);
 
                 var newPrio = { node : toNode           ,
                                 rank : toCost + newHeur } ;
