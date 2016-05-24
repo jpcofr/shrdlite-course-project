@@ -86,11 +86,16 @@ function aStarSearch<Node> ( graph : Graph<Node>             ,
                     explored.remove(toNode);
                     frontier.remove(toPrio);
 
-                    toInfo.cost = toCost; toInfo.parent = edge;
-                    toPrio.rank = toInfo.cost + toInfo.heuristic;
+                    newPrio = { rank : toInfo.cost + toInfo.heuristic ,
+                                node : toNode                         }
 
-                    explored.setValue(toNode, toInfo);
-                    frontier.add(toPrio);
+                    newInfo = { parent : edge                ,
+                                cost : toCost                ,
+                                heuristic : toInfo.heuristic ,
+                                priority : newPrio           }
+
+                    explored.setValue(toNode, newInfo);
+                    frontier.add(newPrio);
                 }
             }
             else { // IF IT HAS NOT BEEN EXPLORED
