@@ -375,7 +375,6 @@ module Planner {
         var h = (s: WorldState) => heuristic(s,goal);
         var toStr = (s: WorldState) => stringifyState(s);
         var objNamesMap = objectDescriptions(state);
-        console.log(objNamesMap);
         try {
             var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10, toStr);
 
@@ -384,20 +383,19 @@ module Planner {
             var isFirstEdge = true;
             for (let edge of result) {
                 var stepDesc = "";
-
-                isHolding = !edge.isDropping;
-
+                var locDesc = edge.locId == "floor" ? "the floor" : objNamesMap.getValue(edge.locId);
                 if (isFirstEdge && edge.isDropping){
                     isFirstEdge = false;
                     stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
-                    stepDesc+= " on "+ objNamesMap.getValue(edge.locId);
+                    stepDesc+= " on " + locDesc + ".";
                 }else if (edge.isDropping){
+                    var originDesc = lastEdge.locId == "floor" ? "the floor" : objNamesMap.getValue(lastEdge.locId);
                     stepDesc+= "Moving "+ objNamesMap.getValue(edge.objId);
-                    stepDesc+= " from "+ objNamesMap.getValue(lastEdge.locId);
-                    stepDesc+= " to "+ objNamesMap.getValue(edge.locId);
+                    stepDesc+= " from "+ originDesc;
+                    stepDesc+= " to "+ locDesc + ".";
                 } else if(result.indexOf(edge) == result.length-1){
                     stepDesc+= "Taking "+ objNamesMap.getValue(edge.objId);
-                    stepDesc+= " from "+ objNamesMap.getValue(edge.locId);
+                    stepDesc+= " from "+ locDesc + ".";
                 }
 
                 plan.push(stepDesc);
