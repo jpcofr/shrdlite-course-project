@@ -2,3 +2,5 @@ shrdlite-*.js
 doc/
 tsconfig.json
 /*.js
+/*.map
+.project

@@ -85,6 +85,9 @@ module Planner {
 
     class SearchEdge extends Edge<WorldState> {
       cmds : string[];
+      objId : string;
+      locId : string;
+      isDropping: boolean;
     }
 
     class SearchSpace implements Graph<WorldState> {
@@ -110,10 +113,16 @@ module Planner {
                         commands = commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
                         commands.push("p");
 
+                        var originalPosition =
+                            state.stacks[sourceCol][sourceRow - 1] != null ? state.stacks[sourceCol][sourceRow - 1] : "floor";
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
-                                       cmds : commands        } );
+                                       cmds : commands,
+                                       objId : sourceLast,
+                                       locId :  originalPosition,
+                                       isDropping : false
+                                   } );
                     }
             }
             else { // (state.holding != null) {
@@ -137,11 +146,16 @@ module Planner {
                         var commands : string[] = [];
                         commands = commands.concat(makeCommands(state.arm, parseInt(destCol)));
                         commands.push("d");
+                        var destinationPosition = destLast != null ? destLast : "floor";
 
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
-                                       cmds : commands        } );
+                                       cmds : commands,
+                                       objId : heldObj,
+                                       locId: destinationPosition,
+                                       isDropping : true
+                                    } );
                     }
                 }
             }
@@ -360,11 +374,33 @@ module Planner {
         var isGoal = (s: WorldState) => isSatisfied(goal,s);
         var h = (s: WorldState) => heuristic(s,goal);
         var toStr = (s: WorldState) => stringifyState(s);
-
+        var objNamesMap = objectDescriptions(state);
         try {
             var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10, toStr);
+
+            var lastEdge = new SearchEdge();
+            var isHolding = false;
+            var isFirstEdge = true;
             for (let edge of result) {
+                var stepDesc = "";
+                var locDesc = edge.locId == "floor" ? "the floor" : objNamesMap.getValue(edge.locId);
+                if (isFirstEdge && edge.isDropping){
+                    isFirstEdge = false;
+                    stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
+                    stepDesc+= " on " + locDesc + ".";
+                }else if (edge.isDropping){
+                    var originDesc = lastEdge.locId == "floor" ? "the floor" : objNamesMap.getValue(lastEdge.locId);
+                    stepDesc+= "Moving "+ objNamesMap.getValue(edge.objId);
+                    stepDesc+= " from "+ originDesc;
+                    stepDesc+= " to "+ locDesc + ".";
+                } else if(result.indexOf(edge) == result.length-1){
+                    stepDesc+= "Taking "+ objNamesMap.getValue(edge.objId);
+                    stepDesc+= " from "+ locDesc + ".";
+                }
+
+                plan.push(stepDesc);
                 plan = plan.concat(edge.cmds);
+                lastEdge = edge;
             }
         }
         catch (e) {
