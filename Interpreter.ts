@@ -163,7 +163,6 @@ module Interpreter {
                     conjunction.push(disjunction);
                 }
 
-                console.log(stringifyDNF(conjunction));
                 result = result.concat(cnfToDnf(conjunction));
             }
         }
@@ -174,8 +173,8 @@ module Interpreter {
             if(formula[0].length == 0) {return [];}
 
             var headHead = formula[0][0];
-            var noHeadHead = formula.slice(); noHeadHead[0].shift();
-            var tail = formula.slice(); tail.shift();
+            var noHeadHead = cloneMatrix(formula); noHeadHead[0].shift();
+            var tail = cloneMatrix(formula); tail.shift();
 
             var ifTrue = cnfToDnf(tail);
             var ifFalse = cnfToDnf(noHeadHead);
