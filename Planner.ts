@@ -85,7 +85,9 @@ module Planner {
 
     class SearchEdge extends Edge<WorldState> {
       cmds : string[];
-      description : string;
+      objId : string;
+      locId : string;
+      isDropping: boolean;
     }
 
     class SearchSpace implements Graph<WorldState> {
@@ -111,11 +113,15 @@ module Planner {
                         commands = commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
                         commands.push("p");
 
+                        var originalPosition =
+                            state.stacks[sourceCol][sourceRow - 1] != null ? state.stacks[sourceCol][sourceRow - 1] : "floor";
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
                                        cmds : commands,
-                                       description: generateDescription(sourceLast,true)
+                                       objId : sourceLast,
+                                       locId :  originalPosition,
+                                       isDropping : false
                                    } );
                     }
             }
@@ -140,12 +146,15 @@ module Planner {
                         var commands : string[] = [];
                         commands = commands.concat(makeCommands(state.arm, parseInt(destCol)));
                         commands.push("d");
+                        var destinationPosition = destLast != null ? destLast : "floor";
 
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
                                        cmds : commands,
-                                       description: generateDescription(heldObj,false)
+                                       objId : heldObj,
+                                       locId: destinationPosition,
+                                       isDropping : true
                                     } );
                     }
                 }
@@ -156,20 +165,6 @@ module Planner {
 
         compareNodes = function (s1 : WorldState, s2 : WorldState) : number
         {return stringifyState(s1).localeCompare(stringifyState(s2));}
-    }
-
-    function generateDescription(id:string, isPicking:boolean) : string {
-        var newDescription = "";
-        //find object description
-
-        var objectDescription = "";
-        if (isPicking){
-            newDescription = "taking the ";
-        }else{
-            newDescription = "droping the ";
-        }
-        newDescription +=  objectDescription;
-        return newDescription;
     }
 
     /**
@@ -379,11 +374,35 @@ module Planner {
         var isGoal = (s: WorldState) => isSatisfied(goal,s);
         var h = (s: WorldState) => heuristic(s,goal);
         var toStr = (s: WorldState) => stringifyState(s);
-
+        var objNamesMap = objectDescriptions(state);
+        console.log(objNamesMap);
         try {
             var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10, toStr);
+
+            var lastEdge = new SearchEdge();
+            var isHolding = false;
+            var isFirstEdge = true;
             for (let edge of result) {
+                var stepDesc = "";
+
+                isHolding = !edge.isDropping;
+
+                if (isFirstEdge && edge.isDropping){
+                    isFirstEdge = false;
+                    stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
+                    stepDesc+= " on "+ objNamesMap.getValue(edge.locId);
+                }else if (edge.isDropping){
+                    stepDesc+= "Moving "+ objNamesMap.getValue(edge.objId);
+                    stepDesc+= " from "+ objNamesMap.getValue(lastEdge.locId);
+                    stepDesc+= " to "+ objNamesMap.getValue(edge.locId);
+                } else if(result.indexOf(edge) == result.length-1){
+                    stepDesc+= "Taking "+ objNamesMap.getValue(edge.objId);
+                    stepDesc+= " from "+ objNamesMap.getValue(edge.locId);
+                }
+
+                plan.push(stepDesc);
                 plan = plan.concat(edge.cmds);
+                lastEdge = edge;
             }
         }
         catch (e) {
