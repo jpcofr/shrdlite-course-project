@@ -8,7 +8,12 @@ module Interpreter {
 
     /*** Public part. ***/
 
-    /* Top-level function for the Interpreter */
+    // Result of the interpretation of a parse tree.
+    export interface InterpretationResult extends Parser.ParseResult {
+        interpretation : DNFFormula;
+    }
+
+    // Top-level function for the Interpreter.
     export function interpret ( parses : Parser.ParseResult[] ,
                                 currentState : WorldState     )
     : InterpretationResult[] {
@@ -33,10 +38,6 @@ module Interpreter {
         }
     }
 
-    export interface InterpretationResult extends Parser.ParseResult {
-        interpretation : DNFFormula;
-    }
-
     // Alias for formulae in disjunctive NF.
     export type DNFFormula  = Conjunction[];
 
@@ -57,7 +58,11 @@ module Interpreter {
     }
 
     export function stringify(result: InterpretationResult): string {
-        return result.interpretation.map((literals) => {
+        return stringifyDNF(result.interpretation);
+    }
+
+    export function stringifyDNF(interpretation: DNFFormula): string {
+        return interpretation.map((literals) => {
             return stringifyConjunction(literals);
         }).join(" | ");
     }
@@ -158,6 +163,7 @@ module Interpreter {
                     conjunction.push(disjunction);
                 }
 
+                console.log(stringifyDNF(conjunction));
                 result = result.concat(cnfToDnf(conjunction));
             }
         }
