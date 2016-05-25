@@ -140,12 +140,12 @@ function objectDescriptions(state : WorldState) : collections.Dictionary<string,
         }
     }
     var result = new collections.Dictionary<string, string> ();
-
-    for (var form in forms) {
+    for (var form of forms.keys()) {
         if (forms.getValue(form).length == 1) {
             // If there is only one object of this form,
             // we refer to it by its form.
-            result.setValue(id,form);
+            var id = forms.getValue(form)[0];
+            result.setValue(id,"the " + form);
         }
         else {
             for (var id of forms.getValue(form)) {
@@ -174,7 +174,7 @@ function objectDescriptions(state : WorldState) : collections.Dictionary<string,
                 }
                 var sizeDescr = sizeInclude ? size + " " : "";
                 var colDescr = colInclude ? col + " " : "";
-                var description = sizeDescr + colDescr + form;
+                var description = "the " + sizeDescr + colDescr + form;
                 result.setValue(id,description);
             }
         }
