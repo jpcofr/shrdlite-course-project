@@ -115,9 +115,10 @@ function stringifyState (state : WorldState) : string {
                            && state.objects[dest].form == "pyramid"
 }
 
-
-// Checks whether an object with the given id can be found in the
-// world stacks or arm.
+/**
+* Checks whether an object with the given id can be found in the
+* world stacks or arm.
+*/
 function existsObjectId(id: string, state: WorldState): boolean {
     if (id == state.holding) { return true; }
     for (let stack of state.stacks)
@@ -125,9 +126,10 @@ function existsObjectId(id: string, state: WorldState): boolean {
     return false;
 }
 
-
-// A function that creates a mapping from each object
-// to its most concise description.
+/**
+ * A function that creates a mapping from each object
+ * to its most concise description.
+ */
 function objectDescriptions(state : WorldState) : collections.Dictionary<string, string> {
     // Group the objects by form.
     var forms = new collections.MultiDictionary<string, string> ();
@@ -138,6 +140,7 @@ function objectDescriptions(state : WorldState) : collections.Dictionary<string,
         }
     }
     var result = new collections.Dictionary<string, string> ();
+
     for (var form in forms) {
         if (forms.getValue(form).length == 1) {
             // If there is only one object of this form,
