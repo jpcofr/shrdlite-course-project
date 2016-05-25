@@ -152,16 +152,6 @@ module Interpreter {
     }
 
     /**
-    * Checks whether an object with the given id is in the world stacks or arm
-    */
-    function existsObjectId(id: string, state: WorldState): boolean {
-        if (id == state.holding) { return true; }
-        for (let stack of state.stacks)
-            if (stack.indexOf(id) >= 0) { return true; }
-        return false;
-    }
-
-    /**
     * Retrives the coordinates of an existing object, null for the floor
     */
     export function locateObjectId(id: string, state: WorldState): {row : number; col : number} {

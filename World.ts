@@ -1,3 +1,5 @@
+///<reference path="lib/collections.ts"/>
+
 /*** World-related interfaces. ***/
 
 type Stack = string[];
@@ -67,11 +69,11 @@ function stringifyState (state : WorldState) : string {
     return result;
 }
 
-// Checks whether the application of a relation goes against phisical laws.
+// Checks whether the application of a relation goes against physical laws.
  function againstPhysics( rel    : string     ,
                           source : string     ,
                           dest   : string     ,
-                          state  : WorldState ) {
+                          state  : WorldState ) : boolean {
     return source == dest
 
         || rel == "ontop"  && state.objects[source].form == "ball"
@@ -111,4 +113,68 @@ function stringifyState (state : WorldState) : string {
                            && state.objects[source].size == "large"
                            && dest != "floor"
                            && state.objects[dest].form == "pyramid"
+}
+
+
+// Checks whether an object with the given id can be found in the
+// world stacks or arm.
+function existsObjectId(id: string, state: WorldState): boolean {
+    if (id == state.holding) { return true; }
+    for (let stack of state.stacks)
+        if (stack.indexOf(id) >= 0) { return true; }
+    return false;
+}
+
+
+// A function that creates a mapping from each object
+// to its most concise description.
+function objectDescriptions(state : WorldState) : collections.Dictionary<string, string> {
+    // Group the objects by form.
+    var forms = new collections.MultiDictionary<string, string> ();
+    for (var id in state.objects) {
+        if (existsObjectId(id, state)) {
+            var form = state.objects[id].form;
+            forms.setValue(form,id);
+        }
+    }
+    var result = new collections.Dictionary<string, string> ();
+    for (var form in forms) {
+        if (forms.getValue(form).length == 1) {
+            // If there is only one object of this form,
+            // we refer to it by its form.
+            result.setValue(id,form);
+        }
+        else {
+            for (var id of forms.getValue(form)) {
+                var col = state.objects[id].color;
+                var size = state.objects[id].size;
+                var colInclude = false;
+                var sizeInclude = false;
+                for (var otherId of forms.getValue(form)) {
+                    if (otherId != id) {
+                        if (state.objects[otherId].color == col) {
+                            // If we have 2 objects of the same form and color,
+                            // we must distinguish by size.
+                            sizeInclude = true;
+                        }
+                        if (state.objects[otherId].size == size) {
+                            // If we have 2 objects of the same form and size,
+                            // we must distinguish by color.
+                            colInclude = true;
+                        }
+                    }
+                }
+                if (!colInclude && !sizeInclude) {
+                    // If an object differs in both size and color from all
+                    // others of the same form, we distinguish it by size.
+                    sizeInclude = true;
+                }
+                var sizeDescr = sizeInclude ? size + " " : "";
+                var colDescr = colInclude ? col + " " : "";
+                var description = sizeDescr + colDescr + form;
+                result.setValue(id,description);
+            }
+        }
+    }
+    return result;
 }
