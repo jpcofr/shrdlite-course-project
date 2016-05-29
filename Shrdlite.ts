@@ -13,6 +13,15 @@ module Shrdlite {
                 var plan : string[] = splitStringIntoPlan(utterance);
                 if (!plan) {
                     plan = parseUtteranceIntoPlan(world, utterance);
+                    if(plan[0] == "clarify"){
+                        var askForMeaning = "Did you mean ";
+
+                        for(var question in plan.splice(0)){
+                            askForMeaning+=  " or "
+                        }
+                        askForMeaning = askForMeaning.substring(0, askForMeaning.length - 4) + "?";
+                        nextInput = () => world.readUserInput(askForMeaning, endlessLoop);
+                    }
                 }
                 if (plan) {
                     world.printDebugInfo("Plan: " + plan.join(", "));
@@ -58,6 +67,11 @@ module Shrdlite {
             parses.forEach((result, n) => {
                 world.printDebugInfo("  (" + n + ") " + Parser.stringify(result));
             });
+
+            if (parses.length > 1) {
+                return tryDisambiguateGrammar(interpretations, world.currentState);
+            }
+
         }
         catch(err) {
             world.printError("Parsing error", err);
@@ -77,7 +91,11 @@ module Shrdlite {
                 // should we throw an ambiguity error?
                 // ... throw new Error("Ambiguous utterance");
                 // or should we let the planner decide?
+
+                return tryDisambiguateObject(interpretations, world.currentState);
             }
+
+
         }
         catch(err) {
             world.printError("Interpretation error", err);
@@ -109,6 +127,41 @@ module Shrdlite {
         var finalPlan : string[] = plans[0].plan;
         world.printDebugInfo("Final plan: " + finalPlan.join(", "));
         return finalPlan;
+    }
+
+    function tryDisambiguateGrammar(parses: Parser.ParseResult[],
+        state: WorldState): string[] {
+        var questions: string[];
+        questions.push("clarify");
+
+        parses.forEach((parseResult) => {
+            questions.push(generateClarificationQuestion(
+                parseResult.parse,
+                state));
+        });
+
+        return questions;
+    }
+
+    function generateClarificationQuestion(cmd: Parser.Command,
+        state: WorldState): string {
+
+
+        return "new question";
+    }
+
+    function tryDisambiguateObject(parses: Interpreter.InterpretationResult[],
+        state: WorldState): string[] {
+        var questions: string[];
+        questions.push("clarify");
+
+        parses.forEach((parseResult) => {
+            questions.push(generateClarificationQuestion(
+                parseResult.parse,
+                state));
+        });
+
+        return questions;
     }
 
 
