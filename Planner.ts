@@ -105,7 +105,8 @@ module Planner {
                             holding: sourceLast,
                             arm: parseInt(sourceCol),
                             objects: state.objects,
-                            examples: state.examples
+                            examples: state.examples,
+                            clarifying: false
                         }
                         newState.stacks[sourceCol].pop();
 
@@ -139,7 +140,8 @@ module Planner {
                             holding: null,
                             arm: parseInt(destCol),
                             objects: state.objects,
-                            examples: state.examples
+                            examples: state.examples,
+                            clarifying: false
                         }
                         newState.stacks[destCol].push(state.holding);
 
@@ -384,11 +386,13 @@ module Planner {
             for (let edge of result) {
                 var stepDesc = "";
                 var locDesc = edge.locId == "floor" ? "the floor" : objNamesMap.getValue(edge.locId);
-                if (isFirstEdge && edge.isDropping){
+                if (isFirstEdge) {
                     isFirstEdge = false;
-                    stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
-                    stepDesc+= " on " + locDesc + ".";
-                }else if (edge.isDropping){
+                    if (edge.isDropping){
+                        stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
+                        stepDesc+= " on " + locDesc + ".";
+                    }
+                } else if (edge.isDropping){
                     var originDesc = lastEdge.locId == "floor" ? "the floor" : objNamesMap.getValue(lastEdge.locId);
                     stepDesc+= "Moving "+ objNamesMap.getValue(edge.objId);
                     stepDesc+= " from "+ originDesc;

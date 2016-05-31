@@ -11,6 +11,8 @@ module Interpreter {
     // Result of the interpretation of a parse tree.
     export interface InterpretationResult extends Parser.ParseResult {
         interpretation : DNFFormula;
+        // Keep track of which parses have a reasonable interpretation
+        whichParse : number;
     }
 
     // Top-level function for the Interpreter.
@@ -19,17 +21,20 @@ module Interpreter {
     : InterpretationResult[] {
         var errors = <any[]> [];
         var interpretations = <InterpretationResult[]> [];
+        var parseCounter = 0;
         parses.forEach((parseResult) => {
             try {
                 var result = <InterpretationResult> parseResult;
                 result.interpretation = interpretCommand( result.parse ,
                                                           currentState );
+                result.whichParse = parseCounter;
                 if(result.interpretation.length > 0) {
                     interpretations.push(result);
                 }
             } catch (err) {
                 errors.push(err);
             }
+            parseCounter += 1
         });
         if (interpretations.length > 0) {
             return interpretations;
