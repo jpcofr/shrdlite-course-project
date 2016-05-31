@@ -32,7 +32,7 @@ interface WorldState {
     // List of predefined example sentences/utterances that the user
     //can choose from in the UI.
     examples: string[];
-    // A variable to keep track of whether something needs clarification.
+    // A variable to keep track of whether we're waiting for clarification.
     clarifying: boolean;
     // To keep track of previously found plans when asking the user for
     // clarification.

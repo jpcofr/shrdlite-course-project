@@ -12,12 +12,15 @@ module Shrdlite {
             if (utterance.trim()) {
                 var plan : string[] = splitStringIntoPlan(utterance);
                 if (!plan) {
-                    if (world.currentState.clarifying) {
+                    if (world.currentState.clarifying) { // Waiting for clarification.
+                        // The user should have input a number corresponding to
+                        // their preferred interpretation.
                         var num = parseInt(utterance);
+
                         if (isNaN(num) || num < 1 || num >= world.currentState.plans.length) {
                             // Invalid input, try again
                         }
-                        else {
+                        else { // Valid input.
                             plan = world.currentState.plans[num -1];
                             world.currentState.clarifying = false;
                         }
@@ -33,10 +36,14 @@ module Shrdlite {
                             questions.forEach((question,n) => {
                                 world.printSystemOutput("  (" + (n+1) + ") " + question);
                             });
+
+                            // Update world state to handle clarification.
                             world.currentState.clarifying = true;
                             world.currentState.plans = plans;
                         }
-                        else {plan = plans[0];}
+                        else { // We only found one plan.
+                            plan = plans[0];
+                        }
                     }
                 }
                 if (plan) {
@@ -55,7 +62,9 @@ module Shrdlite {
 
 
     /**
-     * Generic function that takes an utterance and returns a plan. It works according to the following pipeline:
+     * A function that takes an utterance and returns a list of plans,
+     * along with clarification questions if more than one plan is found.
+     * It works according to the following pipeline:
      * - first it parses the utterance (Parser.ts)
      * - then it interprets the parse(s) (Interpreter.ts)
      * - then it creates plan(s) for the interpretation(s) (Planner.ts)
@@ -68,14 +77,9 @@ module Shrdlite {
      * own result to this structure, since each Result is fed
      * (directly or indirectly) into the next module.
      *
-     * There are two sources of ambiguity: a parse might have several
-     * possible interpretations, and there might be more than one plan
-     * for each interpretation. In the code there are placeholders
-     * that you can fill in to decide what to do in each case.
-     *
      * @param world The current world.
      * @param utterance The string that represents the command.
-     * @returns A plan in the form of a stack of strings, where each element is either a robot action, like "p" (for pick up) or "r" (for going right), or a system utterance in English that describes what the robot is doing.
+     * @returns A list of plans with each in the form of a stack of strings, where each element is either a robot action, like "p" (for pick up) or "r" (for going right), or a system utterance in English that describes what the robot is doing.
      */
     export function parseUtteranceIntoPlan(world : World, utterance : string) : string[][] {
         // Parsing
@@ -101,10 +105,6 @@ module Shrdlite {
                 world.printDebugInfo("  (" + n + ") " + Interpreter.stringify(result));
             });
 
-            if (interpretations.length > 1) {
-                // More than one parse tree has a reasonable interpretation,
-                // we let the user clarify which is the correct interpretation.
-            }
         }
         catch(err) {
             world.printError("Interpretation error", err);
@@ -122,8 +122,9 @@ module Shrdlite {
             });
 
             if (plans.length > 1) {
-                // several plans were found -- how should this be handled?
-                // this means that we have several interpretations.
+                // Several plans were found, this means we have several interpretations.
+                // We generate descriptions of the different interpretations to ask
+                // the user for clarification.
                 results.push(grammarDisambiguationQuestions(parses,plans));
             }
         }
@@ -132,11 +133,11 @@ module Shrdlite {
             return;
         }
 
-        //var finalPlan : string[] = plans[0].plan;
-        //world.printDebugInfo("Final plan: " + finalPlan.join(", "));
-        //return finalPlan;
         return results;
     }
+
+    // Takes a list of parses and corresponding plans and generates descriptions
+    // of the parses that correspond to feasible interpretations.
     function grammarDisambiguationQuestions(parses : Parser.ParseResult[],
                                     plans : Planner.PlannerResult[]
                                    ): string[] {
