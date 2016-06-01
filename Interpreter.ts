@@ -10,8 +10,9 @@ module Interpreter {
 
     // Result of the interpretation of a parse tree.
     export interface InterpretationResult extends Parser.ParseResult {
+        // A DNF formula.
         interpretation : DNFFormula;
-        // Keep track of which parses have a reasonable interpretation
+        // The index of the parse tree that generated this result.
         whichParse : number;
     }
 
@@ -62,21 +63,25 @@ module Interpreter {
         args: string[];
     }
 
-    export function stringify(result: InterpretationResult): string {
+    // Stringifies interpretation results.
+    export function stringify (result: InterpretationResult): string {
         return stringifyDNF(result.interpretation);
     }
 
-    export function stringifyDNF(interpretation: DNFFormula): string {
+    // Stringifies formulae.
+    export function stringifyDNF (interpretation: DNFFormula): string {
         return interpretation.map((literals) => {
             return stringifyConjunction(literals);
         }).join(" | ");
     }
 
-    export function stringifyConjunction(con: Conjunction): string {
-        return con.map((lit) => stringifyLiteral(lit)).join(" & ")
+    // Stringifies conjunctions.
+    export function stringifyConjunction (con: Conjunction): string {
+        return con.map((lit) => stringifyLiteral(lit)).join(" & ");
     }
 
-    export function stringifyLiteral(lit: Literal): string {
+    // Stringifies literals.
+    export function stringifyLiteral (lit: Literal): string {
         return (lit.polarity ? "" : "-") +
                lit.relation              +
                "("                       +
@@ -85,12 +90,14 @@ module Interpreter {
     }
 
     // Literal comparator.
-    export function compareLiteral(l1 : Literal, l2 :Literal) : number {
+    export function compareLiteral ( l1 : Literal ,
+                                     l2 : Literal ) : number {
         return stringifyLiteral(l1).localeCompare(stringifyLiteral(l2));
     }
 
     // Conjunction comparator.
-    export function compareConjunction(c1 : Conjunction, c2 :Conjunction) : number {
+    export function compareConjunction ( c1 : Conjunction ,
+                                         c2 : Conjunction ) : number {
         return stringifyConjunction(c1).localeCompare(stringifyConjunction(c2))
     }
 
@@ -106,11 +113,11 @@ module Interpreter {
     type LocationInfo = Location[];
     type CommandInfo = DNFFormula;
 
-    // Checks wether placing an object into a location goes against
+    // Checks whether placing an object into a location goes against
     // physical laws.
-    function badPlacement ( obj : string        ,
-                            loc   : Location    ,
-                            state  : WorldState ) {
+    function legalPlacement ( obj : string        ,
+                              loc   : Location    ,
+                              state  : WorldState ) {
         return againstPhysics(loc.rel, obj, loc.id, state);
     }
 
@@ -124,44 +131,52 @@ module Interpreter {
     //   disjunctive normal form (disjunction of conjunctions).
     // @throws An error when no valid interpretations can be found
     function interpretCommand ( cmd : Parser.Command ,
-                                state : WorldState   )
-    : CommandInfo {
-        var result: CommandInfo = [];
+                                state : WorldState   ) : CommandInfo {
+        var result = <CommandInfo> [];
 
         if (cmd.command == "take") { // TAKE AN OBJECT INTO THE ARM
             for (let ent of interpretEntity(cmd.entity, state)) {
                 // We are conforming to the example that runs on the website,
                 // which is in contrast with one interpretation test.
-                // Conforming to tests would need : if (ent != state.holding)
-                result.push([{polarity: true, relation: "holding", args: [ent]}]);
+                // To conform to the tests use "if (ent != state.holding)".
+                result.push( [ { polarity : true      ,
+                                 relation : "holding" ,
+                                 args: [ent]          } ] );
             }
         }
         else if (!cmd.entity) { // PUT THE OBJECT IN THE ARM SOMEWHERE
             for (let loc of interpretLocation(cmd.location, state)) {
-                if (!badPlacement(state.holding,loc,state)) {
-                    result.push([{polarity: true, relation: loc.rel, args: [state.holding, loc.id]}]);
+                if (legalPlacement(state.holding,loc,state)) {
+                    result.push( [ { polarity : true                ,
+                                     relation : loc.rel             ,
+                                     args : [state.holding, loc.id] } ] );
                 }
             }
         }
         else { // MOVE AN OBJECT SOMEWHERE
-            if(cmd.entity.quantifier == "any" || cmd.entity.quantifier == "the") {
+            if( cmd.entity.quantifier == "any" || // EXISTENTIAL QUANTIFICATION
+                cmd.entity.quantifier == "the"  ) {
                 for (let loc of interpretLocation(cmd.location, state)) {
                     for (let ent of interpretEntity(cmd.entity, state)) {
-                        if (!badPlacement(ent,loc,state)) {
-                          result.push([{polarity: true, relation: loc.rel, args: [ent, loc.id]}]);
+                        if (legalPlacement(ent,loc,state)) {
+                            result.push( [ { polarity : true     ,
+                                             relation : loc.rel  ,
+                                             args: [ent, loc.id] } ] );
                         }
                     }
                 }
             }
-            if(cmd.entity.quantifier == "all") {
+            if(cmd.entity.quantifier == "all") { // UNIVERSAL QUANTIFICATION
                 var conjunction = <Literal[][]> [];
 
                 for (let ent of interpretEntity(cmd.entity, state)) {
                     var disjunction = <Literal[]> [];
 
                     for (let loc of interpretLocation(cmd.location, state)) {
-                        if (!badPlacement(ent,loc,state)) {
-                            disjunction.push({polarity: true, relation: loc.rel, args: [ent, loc.id]});
+                        if (legalPlacement(ent,loc,state)) {
+                            disjunction.push( { polarity : true     ,
+                                                relation : loc.rel  ,
+                                                args: [ent, loc.id] } );
                         }
                     }
 
@@ -203,47 +218,53 @@ module Interpreter {
         return result;
     }
 
-    /**
-    * Retrives the coordinates of an existing object, null for the floor
-    */
-    export function locateObjectId(id: string, state: WorldState): {row : number; col : number} {
+    // Retrives the coordinates of an object. If the object is in a stack,
+    // row and column are returned. If the object is in the arm, the returned
+    // row and column are null and the arm's column respectively. If the object
+    // does not exist, null is returned.
+    export function locateObjectId(id: string, state: WorldState) :
+    {row : number; col : number} {
         for(let col of state.stacks) for(let elem of col)
             if(elem == id) {
-                return {col : state.stacks.indexOf(col), row : col.indexOf(elem)};
+                return { col : state.stacks.indexOf(col) ,
+                         row : col.indexOf(elem)         } ;
             }
-        if (id == state.holding) {
-            // does this work?
-            return {row : null, col : state.arm};
-        }
+
+        if (id == state.holding) {return {row : null, col : state.arm};}
+
         return null;
     }
 
-    /**
-    * Returns the list of strings representing the relevant objects
-    */
-    function interpretObject(obj: Parser.Object, state: WorldState): ObjectInfo {
-        var foundObjs: string[] = [];
+    // Returns the list of object identifiers indicated by an object node.
+    function interpretObject( obj: Parser.Object ,
+                              state: WorldState  ) : ObjectInfo {
+        var foundObjs = <string[]> [];
 
-        if (obj.location == null) { // Attribute-based reference
+        if (obj.location == null) { // ATTRIBUTE-BASED REFERENCE
             for (var id in state.objects) {
                 if (existsObjectId(id,state)
-                    && (obj.form  == null || obj.form  == "anyform" || obj.form == state.objects[id].form)
-                    && (obj.size  == null || obj.size  == state.objects[id].size                         )
-                    && (obj.color == null || obj.color == state.objects[id].color                        ))
+                    && (  obj.form == null
+                       || obj.form == "anyform"
+                       || obj.form == state.objects[id].form )
+                    && (  obj.size == null
+                       || obj.size == state.objects[id].size )
+                    && ( obj.color == null
+                       || obj.color == state.objects[id].color ) )
                 {foundObjs.push(id);}
             }
+
             if (obj.form == "floor") { foundObjs.push("floor"); }
         }
-        else { // Location-based reference
-            var objects1 : string [] = interpretObject(obj.object, state);
-            var objects2 : string [] = [];
+        else { // LOCATION-BASED REFERENCE
+            var objects1 = interpretObject(obj.object, state);
+            var objects2 = <string[]> [];
 
             var locations = interpretLocation(obj.location, state);
 
             for (let location of locations) {
                 var rc = locateObjectId(location.id, state);
 
-                if (rc == null) { // We are dealing with the floor
+                if (rc == null) { // WE ARE DEALING WITH THE FLOOR
                     if (location.rel == "ontop") {
                         for (let col of state.stacks) {
                             if (col.length > 0) {
@@ -259,45 +280,56 @@ module Interpreter {
                         }
                     }
                 }
-                else { // We are not dealing with the floor
+                else { // WE ARE NOT DEALING WITH THE FLOOR
                     var target = state.stacks[rc.col][rc.row];
-                    var justAbove  = state.stacks[rc.col][rc.row + 1];
+                    var justAbove = state.stacks[rc.col][rc.row + 1];
 
                     switch(location.rel) {
-                    case "ontop"   :
-                        if (justAbove != null && state.objects[target].form != "box") {
-                            objects2.push(justAbove);
-                        }
+                        case "ontop" :
+                        if (  justAbove != null
+                           && state.objects[target].form != "box" ) {
+                                objects2.push(justAbove);
+                            }
                         break;
-                    case "above"   :
+
+                        case "above" :
                         for (let t of state.stacks[rc.col]) {
                             if (state.stacks[rc.col].indexOf(t) > rc.row) {
                                 objects2.push(t);
                             }
                         }
                         break;
-                    case "under"   :
+
+                        case "under" :
                         for (let t of state.stacks[rc.col]) {
                             if (state.stacks[rc.col].indexOf(t) < rc.row) {
                                 objects2.push(t);
                             }
                         }
                         break;
-                    case "inside"  :
-                        if (justAbove != null && state.objects[target].form == "box") {
+
+                        case "inside" :
+                        if (  justAbove != null
+                           && state.objects[target].form == "box" ) {
                             objects2.push(justAbove);
-                            if (state.objects[justAbove].form == "box" && state.stacks[rc.col][rc.row + 2] != null) {
-                                // nested boxes
+                            if (  state.objects[justAbove].form == "box"
+                               && state.stacks[rc.col][rc.row + 2] != null ) {
+                                // NESTED BOXES
                                 objects2.push(state.stacks[rc.col][rc.row + 2]);
                             }
                         }
                         break;
-                    case "beside"  : // check bad row case
-                        for (let t of state.stacks[rc.col - 1]) {objects2.push(t);}
-                        for (let t of state.stacks[rc.col + 1]) {objects2.push(t);}
+
+                        case "beside" :
+                            for (let t of state.stacks[rc.col - 1]) {
+                                objects2.push(t);
+                            }
+                            for (let t of state.stacks[rc.col + 1]) {
+                                objects2.push(t);
+                            }
                         break;
 
-                    case "leftof"  :
+                        case "leftof" :
                         for (let s of state.stacks) {
                             if (state.stacks.indexOf(s) < rc.col) {
                                 for (let t of s) {
@@ -306,7 +338,8 @@ module Interpreter {
                             }
                         }
                         break;
-                    case "rightof" :
+
+                        case "rightof" :
                         for (let s of state.stacks) {
                             if (state.stacks.indexOf(s) > rc.col) {
                                 for (let t of s) {
@@ -317,24 +350,28 @@ module Interpreter {
                         break;
                     }
                 }
-                foundObjs = uniqueIntersect(objects1, objects2,
-                                      function (x,y){return x.localeCompare(y);});
+
+                foundObjs = uniqueIntersect( objects1, objects2,
+                                function (x,y){return x.localeCompare(y);} );
             }
         }
 
         return foundObjs;
     }
 
-    function interpretEntity(ent: Parser.Entity, state: WorldState): EntityInfo {
-        // calls interpretObject, handling quantifiers != any is an extension
+    // Returns the list of object identifiers indicated by an entity node.
+    function interpretEntity ( ent   : Parser.Entity ,
+                               state : WorldState    ) : EntityInfo {
         return interpretObject(ent.object, state);
     }
 
-    function interpretLocation(loc: Parser.Location, state: WorldState): LocationInfo {
-        // gets objects from interpretEntity and pairs them with the input relation
-        var result: LocationInfo = [];
+    // Returns the list of relation-object pairs indicated by a location node.
+    function interpretLocation ( loc   : Parser.Location ,
+                                 state : WorldState      ) : LocationInfo {
+        var result = <LocationInfo> [];
+
         for (let candidate of interpretEntity(loc.entity, state)) {
-            result.push({ rel: loc.relation, id: candidate });
+            result.push( { rel: loc.relation, id: candidate } );
         }
 
         return result;
