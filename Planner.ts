@@ -92,7 +92,7 @@ module Planner {
 
             if (state.holding == null) { // IF THE ARM IS EMPTY
                 for (var sourceCol in state.stacks) {
-                    if(state.stacks[sourceCol].length > 0) {
+                    if(state.stacks[sourceCol].length > 0) { // NON EMPTY STACK
                         var sourceRow = state.stacks[sourceCol].length - 1;
                         var sourceLast = state.stacks[sourceCol][sourceRow];
 
@@ -173,91 +173,108 @@ module Planner {
     }
 
     // Computes truth of the given literal in the given world state.
-    function isValid(lit : Interpreter.Literal, state : WorldState) : boolean {
-        // Either the relation is "holding" with one argument, or there are 2 arguments.
-        var isTrue : boolean = false;
-        var ob1 : string = lit.args[0];
-        if (lit.relation == "holding") {
+    function isValid (lit : Interpreter.Literal, state : WorldState) : boolean {
+        var isTrue = false;
+        var ob1 = lit.args[0];
+
+        if (lit.relation == "holding") { // HOLDING, ONE ARGUMENT
             isTrue = (ob1 == state.holding);
         }
-        else {
-            // We have 2 arguments, an object and a location.
+        else { // NOT HOLDING, TWO ARGUMENTS
             var ob2 = lit.args[1];
             var loc1 = Interpreter.locateObjectId(ob1, state);
             var loc2 = Interpreter.locateObjectId(ob2, state);
+
             if (ob1 == "floor") {
                 isTrue = lit.relation == "under";
             }
             else if (ob2 == "floor") {
                 isTrue = lit.relation == "above";
-                if (lit.relation == "ontop") {
-                    isTrue = loc1.row == 0;
-                }
+                if (lit.relation == "ontop") {isTrue = loc1.row == 0;}
             }
-            else {
-                // We are not dealing with the floor.
+            else { // WE ARE NOT DEALING WITH THE FLOOR
                 switch(lit.relation) {
-                case "ontop" :
-                    // Objects are "inside" boxes but "ontop" of other objects.
-                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1 && state.objects[ob2].form != "box");
+                    case "ontop" : // ONTOP IS JUST FOR NON BOXES
+                    isTrue =  loc1.col == loc2.col
+                           && loc1.row == loc2.row + 1
+                           && state.objects[ob2].form != "box";
                     break;
-                case "inside" :
-                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1 && state.objects[ob2].form == "box");
-                    // Special case for nested boxes.
+
+                    case "inside" : // INSIDE IS JUST FOR BOXES
+                    isTrue =  loc1.col == loc2.col
+                           && loc1.row == loc2.row + 1
+                           && state.objects[ob2].form == "box";
+
+                    // SPECIAL CASE FOR NESTED BOXES
                     var inside = state.stacks[loc2.col][loc2.row+1];
-                    if (inside != null && state.objects[inside].form == "box") {
-                        isTrue = isTrue || (loc1.col == loc2.col && loc1.row == loc2.row + 2);
+                    if (  inside != null
+                       && state.objects[inside].form == "box" ) {
+                        isTrue = isTrue
+                               || ( loc1.col == loc2.col    &&
+                                    loc1.row == loc2.row + 2 );
                     }
                     break;
-                case "above" :
-                    isTrue = (loc1.col == loc2.col && loc1.row > loc2.row);
+
+                    case "above" :
+                    isTrue = loc1.col == loc2.col && loc1.row > loc2.row;
                     break;
-                case "under" :
-                    isTrue = (loc1.col == loc2.col && loc1.row < loc2.row);
+
+                    case "under" :
+                    isTrue = loc1.col == loc2.col && loc1.row < loc2.row;
                     break;
-                case "beside" :
-                    isTrue = (Math.abs(loc1.col - loc2.col) == 1);
+
+                    case "beside" :
+                    isTrue = Math.abs(loc1.col - loc2.col) == 1;
                     break;
-                case "leftof" :
-                    isTrue = (loc1.col < loc2.col);
+
+                    case "leftof" :
+                    isTrue = loc1.col < loc2.col;
                     break;
-                case "rightof" :
-                    isTrue = (loc1.col > loc2.col);
+
+                    case "rightof" :
+                    isTrue = loc1.col > loc2.col;
                     break;
                 }
             }
         }
-        return (lit.polarity == isTrue);
+
+        return lit.polarity == isTrue;
     }
 
-    // Checks whether the given formula is satisfied in the given state.
-    function isSatisfied(formula : Interpreter.DNFFormula, state : WorldState) : boolean {
-        var result : boolean = false;
+    // Checks whether the given formula is satisfied in the given world state.
+    function isSatisfied ( formula : Interpreter.DNFFormula ,
+                           state   : WorldState             ) : boolean {
+        var result = false;
+
         for (let conjunction of formula) {
             result = true;
+
             for (let literal of conjunction) {
                 if (!isValid(literal,state)) {
                     result = false;
                 }
             }
-            if (result) {
-                // All the literals in the conjunction are true in the current state.
+
+            if (result) { // ALL THE LITERALS IN THE CONJUNCTION ARE TRUE
                 return true;
             }
         }
-        return false;
+
+        return false; // NO CONJUNCTION IS TRUE
     }
 
-    // A heuristic for the minimum number of steps needed for the robot arm to pick
-    // pick up an object assuming it is already positioned above the correct column.
-    function minAccess(obj: string, state: WorldState) : number {
+    // A heuristic for the minimum number of steps needed for the robot arm
+    // to pick pick up an object assuming it is already positioned above the
+    // correct column.
+    function minAccess (obj: string, state: WorldState) : number {
         if (obj == "floor" || obj == state.holding) {
             return 0;
         }
         else {
             var loc = Interpreter.locateObjectId(obj,state);
             var height = state.stacks[loc.col].length; // Height of the stack.
-            var above = height - loc.row - 1; // Number of objects above obj.
+            var above = height - loc.row - 1;
+
             // For each object above obj we need at least 4 moves to get that
             // object out of our way (pick it up, move it at least 1 stack,
             //release it, move back into position).
@@ -265,105 +282,115 @@ module Planner {
         }
     }
 
-    // A heuristic for how far a given state is from a goal literal.
-    // Assumes that the cost is the length of a path (# of l,r,p, or d commands).
-    function litHeuristic(state: WorldState, lit: Interpreter.Literal) : number {
-        if (isValid(lit,state)) {
+    // A heuristic for how far a given state is from a goal literal. Assumes
+    // that the cost is the length of a path (# of l,r,p, or d commands).
+    function litHeuristic ( state: WorldState        ,
+                            lit: Interpreter.Literal ) : number {
+        if (isValid(lit,state)) { // THE GOAL HAS BEEN REACHED
             return 0;
         }
-        else {
-            // The goal has not been reached.
+        else { // THE GOAL HAS NOT BEEN REACHED
             var minSteps = 0;
-            var ob1 : string = lit.args[0];
+            var ob1 = lit.args[0];
             var loc1 = Interpreter.locateObjectId(ob1, state);
             var armPos : number = state.arm;
-            if (lit.relation == "holding") {
+
+            if (lit.relation == "holding") { // ONE ARGUMENT
                 minSteps = Math.abs(loc1.col - armPos) + 1;
             }
-            else {
-                // We have 2 arguments.
+            else { // TWO ARGUMENTS
                 var ob2 = lit.args[1];
                 var loc2 = Interpreter.locateObjectId(ob2, state);
                 var access1 = minAccess(ob1,state);
-                if (ob2 == "floor") {
-                    if (ob1 == state.holding) {
-                        // At best, we just need to put the object down.
+
+                if (ob2 == "floor") { // WE ARE DEALING WITH THE FLOOR
+                    if (ob1 == state.holding) { // BEST CASE: JUST DROP
                         minSteps = 1;
                     }
-                    else {
-                        // We need to access the object, pick it up,
-                        // move it at least 1 column, and put it down.
+                    else { // BEST CASE: MOVE, PICK, MOVE BY 1, DROP
                         minSteps = access1 + 3;
                     }
                 }
-                else {
-                    // We are not dealing with the floor.
-
-                    // Minimum number of arm moves to the position of the object to be moved.
-                    var minArm = Math.min(Math.abs(armPos - loc1.col), Math.abs(armPos - loc2.col));
+                else { // WE ARE NOT DEALING WITH THE FLOOR
+                    // MINIMUM # ARM MOVES TO REACH ONE OF THE INVOLVED OBJECTS.
+                    var minArm = Math.min( Math.abs(armPos - loc1.col) ,
+                                           Math.abs(armPos - loc2.col) );
                     var access2 = minAccess(ob2,state);
+
                     switch(lit.relation) {
-                    case "ontop" :
-                    case "above" :
-                    case "under" :
-                        // Minimum number of moves from original object position to new one.
+                        case "ontop" :
+                        case "above" :
+                        case "under" :
+                        // MIN # ARM MOVES FROM START POSITION TO NEW ONE.
                         var minMove = Math.abs(loc1.col - loc2.col);
                         break;
-                    case "inside" :
+
+                        case "inside" :
                         var minMove = Math.abs(loc1.col - loc2.col);
-                        // Nested box exception, less moves are needed to access a box if
-                        // it's sufficient to place the object in another box inside the box.
+                        // NESTED BOX CASE, WE NEED LESS MOVES TO PUT A SMALL
+                        // OBJECT IN A LARGE BOX THAT CONTAINS A SMALL BOX
                         var inside = state.stacks[loc2.col][loc2.row + 1];
-                        if (inside != null && state.objects[inside].form == "box" && state.objects[ob1].size == "small") {
+                        if ( inside != null                      &&
+                             state.objects[inside].form == "box" &&
+                             state.objects[ob1].size == "small"   ) {
                             access2 = access2 - 4;
                         }
                         break;
-                    case "beside" :
+
+                        case "beside" :
                         var minMove = Math.abs(loc1.col - loc2.col) - 1;
                         break;
-                    case "leftof" :
-                    case "rightof" :
-                        // Since the literal is not true we know that if the goal
-                        // is leftof(a,b) a must currently be to the right of b
-                        // (or in the same column), and vice versa.
+
+                        case "leftof"  :
+                        case "rightof" :
+                        // SINCE THE LITERAL IS FALSE WE KNOW THAT IF THE
+                        // GOAL IS leftof(a,b) THEN a MUST CURRENTLY BE TO
+                        // THE RIGHT (or in the same column) OF b, AND
+                        // VICEVERSA.
                         var minMove = Math.abs(loc1.col - loc2.col) + 1;
                         break;
                     }
-                    // We add 1 step for dropping the object into position.
+
+                    // WE ADD 1 STEP AS WE HAVE TO DROP THE OBJECT.
                     minSteps = minArm + access1 + access2 + minMove + 1;
                 }
             }
         }
+
         return minSteps;
     }
 
     // A heuristic for how far a given state is from a goal DNF formula.
     // based on the cost being the length of a path (# of l,r,p and d commands).
-    function heuristic(state : WorldState, goal : Interpreter.DNFFormula) : number {
+    function heuristic ( state : WorldState            ,
+                         goal : Interpreter.DNFFormula ) : number {
         var min = Number.MAX_VALUE;
+
         for (let conjunction of goal) {
-            var lHs = conjunction.map(function (x) { return litHeuristic(state,x);})
+            var lHs = conjunction.map(
+                        function (x) {return litHeuristic(state,x);} );
             var maxH = Math.max(...lHs);
-            if (maxH < min) {
-                min = maxH;
-            }
+
+            if (maxH < min) {min = maxH;}
         }
+
         return min;
     }
 
-    /**
-     * The core planner function.
-     * @param interpretation The logical interpretation of the user's desired goal. The plan needs to be such that by executing it, the world is put into a state that satisfies this goal.
-     * @param state The current world state.
-     * @returns Basically, a plan is a
-     * stack of strings, which are either system utterances that
-     * explain what the robot is doing (e.g. "Moving left") or actual
-     * actions for the robot to perform, encoded as "l", "r", "p", or
-     * "d". The code shows how to build a plan. Each step of the plan can
-     * be added using the `push` method.
-     */
-    function planInterpretation(interpretation : Interpreter.DNFFormula, state : WorldState) : string[] {
-        var plan : string[] = [];
+    // The core planner function.
+    // @param interpretation The logical interpretation of the user's desired
+    //   goal. The plan needs to be such that by executing it, the world is
+    //   put into a state that satisfies this goal.
+    // @param state The current world state.
+    // @returns Basically, a plan is a stack of strings, which are either
+    //   system utterances that explain what the robot is doing (e.g.
+    //   "Moving left") or actual actions for the robot to perform, encoded
+    //   as "l", "r", "p", or "d". The code shows how to build a plan. Each
+    //   step of the plan can be added using the `push` method.
+    function planInterpretation ( interpretation : Interpreter.DNFFormula ,
+                                  state : WorldState                      ) :
+    string[] {
+        var plan = <string[]> [];
         var graph = new SearchSpace();
         var startNode = state;
         var goal = interpretation;
@@ -371,32 +398,44 @@ module Planner {
         var h = (s: WorldState) => heuristic(s,goal);
         var toStr = (s: WorldState) => stringifyState(s);
         var objNamesMap = objectDescriptions(state);
-        try {
-            var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10, toStr);
 
+        try {
+            var result = <SearchEdge[]> aStarSearch( graph     ,
+                                                     startNode ,
+                                                     isGoal    ,
+                                                     h         ,
+                                                     10        ,
+                                                     toStr     );
             var lastEdge = new SearchEdge();
             var isHolding = false;
             var isFirstEdge = true;
+
             for (let edge of result) {
-                // Generate an utterance describing what the robot is doing.
+                // WE GENERATE AN UTTERANCE DESCRIBING WHAT THE ROBOT IS DOING.
                 var stepDesc = "";
-                var locDesc = edge.locId == "floor" ? "the floor" : objNamesMap.getValue(edge.locId);
+                var locDesc = edge.locId == "floor"
+                            ? "the floor"
+                            : objNamesMap.getValue(edge.locId);
+
                 if (isFirstEdge) {
                     isFirstEdge = false;
                     if (edge.isDropping){
-                        // If the robot starts with an object in the arm we describe putting the,
-                        // object down, otherwise "dropping" is combined with the previous "taking"
-                        // into a "moving" utterance.
-                        stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
-                        stepDesc+= " on " + locDesc + ".";
+                        // IF THE ROBOT STARTS WITH AN OBJECT IN THE ARM, WE
+                        // SAY IT PUTS THE OBJECT DOWN, OTHERWISE DROPPING IS
+                        // COMBINED WITH THE PREVIOUS TAKING INTO A "MOVING".
+                        stepDesc+="Dropping "+ objNamesMap.getValue(edge.objId);
+                        stepDesc+=" on " + locDesc + ".";
                     }
-                } else if (edge.isDropping){
-                    var originDesc = lastEdge.locId == "floor" ? "the floor" : objNamesMap.getValue(lastEdge.locId);
+                } else if (edge.isDropping) {
+                    var originDesc = lastEdge.locId == "floor"
+                                   ? "the floor"
+                                   : objNamesMap.getValue(lastEdge.locId);
+
                     stepDesc+= "Moving "+ objNamesMap.getValue(edge.objId);
                     stepDesc+= " from "+ originDesc;
                     stepDesc+= " to "+ locDesc + ".";
                 } else if(result.indexOf(edge) == result.length-1){
-                    // The robot ends by picking up an object (and never puts it down).
+                    // THE ROBOT ENDS BY PICKING UP AN OBJECT.
                     stepDesc+= "Taking "+ objNamesMap.getValue(edge.objId);
                     stepDesc+= " from "+ locDesc + ".";
                 }
@@ -410,6 +449,7 @@ module Planner {
             console.log("Planner failure!");
             plan = null;
         }
+
         return plan;
     }
 
