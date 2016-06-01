@@ -27,22 +27,24 @@ module Shrdlite {
                     }
                     else {
                         var plans = parseUtteranceIntoPlan(world, utterance);
-                        if (plans.length > 1){ // We ask the user to clarify what they want.
+                        if (plans){
+                            if (plans.length > 1){ // We ask the user to clarify what they want.
 
-                            // Clarification questions have already been generated.
-                            var questions = plans[plans.length-1];
+                                // Clarification questions have already been generated.
+                                var questions = plans[plans.length-1];
 
-                            world.printSystemOutput("I found the following interpretations for your command:");
-                            questions.forEach((question,n) => {
-                                world.printSystemOutput("  (" + (n+1) + ") " + question);
-                            });
+                                world.printSystemOutput("I found the following interpretations for your command:");
+                                questions.forEach((question,n) => {
+                                    world.printSystemOutput("  (" + (n+1) + ") " + question);
+                                });
 
-                            // Update world state to handle clarification.
-                            world.currentState.clarifying = true;
-                            world.currentState.plans = plans;
-                        }
-                        else { // We only found one plan.
-                            plan = plans[0];
+                                // Update world state to handle clarification.
+                                world.currentState.clarifying = true;
+                                world.currentState.plans = plans;
+                            }
+                            else { // We only found one plan.
+                                plan = plans[0];
+                            }
                         }
                     }
                 }
