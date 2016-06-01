@@ -109,7 +109,7 @@ module Shrdlite {
 
         }
         catch(err) {
-            world.printError("Interpretation error: Could not interpret your command in a reasonable manner.");
+            world.printError("Interpretation error, " + err);
             return;
         }
 
@@ -152,7 +152,7 @@ module Shrdlite {
 
     // Generates a description of a command in a way that distinguishes
     // different interpretations of an ambiguous command.
-    function describeCommand(cmd : Parser.Command): string {
+    export function describeCommand(cmd : Parser.Command): string {
         var result = "Take " + cmd.entity.quantifier
             + " " + describeObject(cmd.entity.object) +
             " and put it "
@@ -161,7 +161,7 @@ module Shrdlite {
     }
 
     // Generates an object description.
-    function describeObject(obj : Parser.Object) : string {
+    export function describeObject(obj : Parser.Object) : string {
         var result = "";
         if (obj.object) {
             result = describeObject(obj.object) + " which is "
@@ -177,7 +177,7 @@ module Shrdlite {
     }
 
     // Generates a location description.
-    function describeLocation(loc : Parser.Location) : string {
+    export function describeLocation(loc : Parser.Location) : string {
         var rel = loc.relation == "ontop" ? "on" : loc.relation;
         return rel + " " + loc.entity.quantifier + " " +
             describeObject(loc.entity.object);
