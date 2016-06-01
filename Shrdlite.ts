@@ -109,7 +109,7 @@ module Shrdlite {
 
         }
         catch(err) {
-            world.printError("Interpretation error", err);
+            world.printError("Interpretation error: Could not interpret your command in a reasonable manner.");
             return;
         }
 
@@ -131,7 +131,7 @@ module Shrdlite {
             }
         }
         catch(err) {
-            world.printError("Planning error", err);
+            world.printError("Planning error: Could not make a plan to execute your command.");
             return;
         }
 

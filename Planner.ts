@@ -35,7 +35,7 @@ module Planner {
             try {
                 var result : PlannerResult = <PlannerResult>interpretation;
                 result.plan = planInterpretation(result.interpretation, currentState);
-                if (result.plan.length == 0) {
+                if (result.plan != null && result.plan.length == 0) {
                     result.plan.push("That is already true!");
                 }
                 plans.push(result);
@@ -47,7 +47,7 @@ module Planner {
             return plans;
         } else {
             // Only throw the first error found.
-            throw errors[0];
+            throw "Planning error: Could not find a plan to execute your command.";
         }
     }
 
@@ -410,6 +410,7 @@ module Planner {
         }
         catch (e) {
             console.log("Planner failure!");
+            plan = null;
         }
         return plan;
     }
