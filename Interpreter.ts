@@ -1,6 +1,7 @@
 ///<reference path="Util.ts"/>
 ///<reference path="World.ts"/>
 ///<reference path="Parser.ts"/>
+///<reference path="Shrdlite.ts"/>
 
 /*** Interpreter module. ***/
 
@@ -154,18 +155,6 @@ module Interpreter {
             }
         }
         else { // MOVE AN OBJECT SOMEWHERE
-            if( cmd.entity.quantifier == "any" || // EXISTENTIAL QUANTIFICATION
-                cmd.entity.quantifier == "the"  ) {
-                for (let loc of interpretLocation(cmd.location, state)) {
-                    for (let ent of interpretEntity(cmd.entity, state)) {
-                        if (legalPlacement(ent,loc,state)) {
-                            result.push( [ { polarity : true     ,
-                                             relation : loc.rel  ,
-                                             args: [ent, loc.id] } ] );
-                        }
-                    }
-                }
-            }
             if(cmd.entity.quantifier == "all") { // UNIVERSAL QUANTIFICATION
                 var conjunction = <Literal[][]> [];
 
@@ -184,6 +173,17 @@ module Interpreter {
                 }
 
                 result = result.concat(cnfToDnf(conjunction));
+            }
+            else { // EXISTENTIAL QUANTIFICATION
+                for (let loc of interpretLocation(cmd.location, state)) {
+                    for (let ent of interpretEntity(cmd.entity, state)) {
+                        if (legalPlacement(ent,loc,state)) {
+                            result.push( [ { polarity : true     ,
+                                             relation : loc.rel  ,
+                                             args: [ent, loc.id] } ] );
+                        }
+                    }
+                }
             }
         }
 
@@ -362,7 +362,18 @@ module Interpreter {
     // Returns the list of object identifiers indicated by an entity node.
     function interpretEntity ( ent   : Parser.Entity ,
                                state : WorldState    ) : EntityInfo {
-        return interpretObject(ent.object, state);
+        var result = interpretObject(ent.object, state);
+
+        if(ent.quantifier == "the" && result.length == 0) {
+            throw "there exists no object corresponding to "
+                + "\"" + Shrdlite.describeObject(ent.object) + "\".";
+        }
+        else if(ent.quantifier == "the" && result.length > 1) {
+            throw "there exist many objects corresponding to "
+                + "\"" + Shrdlite.describeObject(ent.object) + "\".";
+        }
+
+        return result;
     }
 
     // Returns the list of relation-object pairs indicated by a location node.
