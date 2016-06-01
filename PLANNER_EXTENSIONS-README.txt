@@ -40,7 +40,7 @@ World: added a variable to signal that the current processing state is
 clarification.
 
 interactive(world : World) : void: Modified to be able to manage user input
-regarding the chosen interpretation. Also takes care of promting the user if
+regarding the chosen interpretation. Also takes care of prompting the user if
 further clarification is needed after processing a given command.
 
 function grammarDisambiguationQuestions(parses : Parser.ParseResult[],
@@ -49,6 +49,3 @@ Generates command descriptions from every plan using describeCommand.
 
 describeCommand(cmd : Parser.Command): string
 Builds a textual description of a command.
-
-
-.
