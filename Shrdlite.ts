@@ -127,7 +127,7 @@ module Shrdlite {
                 // Several plans were found, this means we have several interpretations.
                 // We generate descriptions of the different interpretations to ask
                 // the user for clarification.
-                results.push(grammarDisambiguationQuestions(parses,plans));
+                results.push(grammarDisambiguationQuestions(plans));
             }
         }
         catch(err) {
@@ -140,12 +140,10 @@ module Shrdlite {
 
     // Takes a list of parses and corresponding plans and generates descriptions
     // of the parses that correspond to feasible interpretations.
-    function grammarDisambiguationQuestions(parses : Parser.ParseResult[],
-                                    plans : Planner.PlannerResult[]
-                                   ): string[] {
+    function grammarDisambiguationQuestions(plans : Planner.PlannerResult[]): string[] {
         var result = <string[]> [];
         plans.forEach((planResult) => {
-            result.push(describeCommand(parses[planResult.whichParse].parse));
+            result.push(describeCommand(planResult.parse));
         });
         return result;
     }
