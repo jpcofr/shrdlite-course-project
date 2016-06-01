@@ -64,24 +64,24 @@ module Interpreter {
     }
 
     // Stringifies interpretation results.
-    export function stringify (result: InterpretationResult): string {
+    export function stringify (result: InterpretationResult) : string {
         return stringifyDNF(result.interpretation);
     }
 
     // Stringifies formulae.
-    export function stringifyDNF (interpretation: DNFFormula): string {
+    export function stringifyDNF (interpretation: DNFFormula) : string {
         return interpretation.map((literals) => {
             return stringifyConjunction(literals);
         }).join(" | ");
     }
 
     // Stringifies conjunctions.
-    export function stringifyConjunction (con: Conjunction): string {
+    export function stringifyConjunction (con: Conjunction) : string {
         return con.map((lit) => stringifyLiteral(lit)).join(" & ");
     }
 
     // Stringifies literals.
-    export function stringifyLiteral (lit: Literal): string {
+    export function stringifyLiteral (lit: Literal) : string {
         return (lit.polarity ? "" : "-") +
                lit.relation              +
                "("                       +
@@ -117,7 +117,7 @@ module Interpreter {
     // physical laws.
     function legalPlacement ( obj : string        ,
                               loc   : Location    ,
-                              state  : WorldState ) {
+                              state  : WorldState ) : boolean {
         return !againstPhysics(loc.rel, obj, loc.id, state);
     }
 
