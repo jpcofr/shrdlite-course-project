@@ -148,10 +148,10 @@ class TextWorld implements World {
     // Utilities
 
     private centerString(str : string, width : number) : string {
-    var padlen = width - str.length;
-      if (padlen > 0) {
+        var padlen = width - str.length;
+        if (padlen > 0) {
             str = Array(Math.floor((padlen+3)/2)).join(" ") + str + Array(Math.floor((padlen+2)/2)).join(" ");
-      }
+        }
         return str;
     }
 
