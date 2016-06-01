@@ -352,7 +352,7 @@ module Interpreter {
                 }
 
                 foundObjs = uniqueIntersect( objects1, objects2,
-                                function (x,y){return x.localeCompare(y);} );
+                                function (x,y) {return x.localeCompare(y);} );
             }
         }
 
