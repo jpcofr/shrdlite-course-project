@@ -30,7 +30,7 @@ module Parser {
             throw new Error('Parsing failed, incomplete input');
         }
         return results.map((res) => {
-            // We need to clone the parse result, because parts of it is shared with other parses
+            // We need to clone the parse result, because parts of it are shared with other parses.
             return {input: input, parse: clone(res)};
         });
     }
@@ -38,34 +38,34 @@ module Parser {
     /** The output type of the parser
     */
     export interface ParseResult {
-  /** The input string given by the user. */
+        /** The input string given by the user. */
         input : string;
-  /** The `Command` structure that the parser built from `input`. */
+        /** The `Command` structure that the parser built from `input`. */
         parse : Command;
     }
 
     /** The type of a command for the robot. */
     export interface Command {
-  /** The verb itself, for example "move", "take", "drop" */
+        /** The verb itself, for example "move", "take", "drop" */
         command : string;
-  /** The object in the world, i.e. the `Entity`, which is the patient/direct object of `command`. */
+        /** The object in the world, i.e. the `Entity`, which is the patient/direct object of `command`. */
         entity? : Entity;
-  /** For verbs of motion, this specifies the destination of the action. */
+        /** For verbs of motion, this specifies the destination of the action. */
         location? : Location;
     }
 
     /** A quantified reference (as yet uninterpreted) to an object in the world. */
     export interface Entity {
-  /** Specifies a determiner (e.g. "the", "a/an", "any", "all"). */
+        /** Specifies a determiner (e.g. "the", "a/an", "any", "all"). */
         quantifier : string;
         object : Object;
     }
 
     /** A location in the world. */
     export interface Location {
-  /** A preposition such as "beside", "above", etc. */
+        /** A preposition such as "beside", "above", etc. */
         relation : string;
-  /** The entity relative to which the preposition should be interpreted. */
+        /** The entity relative to which the preposition should be interpreted. */
         entity : Entity;
     }
 
@@ -85,9 +85,9 @@ module Parser {
      *
      */
     export interface Object {
-  /** Recursive reference to an object using a relative clause. */
+        /** Recursive reference to an object using a relative clause. */
         object? : Object;
-  /** Location of the object in the relative clause. */
+        /** Location of the object in the relative clause. */
         location? : Location;
         // Here is the union type divisor
         size? : string;
