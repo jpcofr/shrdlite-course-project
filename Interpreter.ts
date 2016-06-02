@@ -148,6 +148,12 @@ module Interpreter {
                                      args : [state.holding, loc.id] } ] );
                 }
             }
+            if (result.length == 0) { // NONE OF THE LOCATIONS WERE LEGAL
+                var heldObj = state.objects[state.holding];
+                throw "can not legally place the " + heldObj.size + " "
+                    + heldObj.color + " " + heldObj.form + " "
+                    + Shrdlite.describeLocation(cmd.location) + ".";
+            }
         }
         else { // MOVE AN OBJECT SOMEWHERE
             if(cmd.entity.quantifier == "all") { // UNIVERSAL QUANTIFICATION
@@ -168,6 +174,11 @@ module Interpreter {
                 }
 
                 result = result.concat(cnfToDnf(conjunction));
+                if (result.length == 0) { // ILLEGAL PLACEMENT
+                    throw "can not legally place all "
+                        + Shrdlite.describeObject(cmd.entity.object) + "s "
+                        + Shrdlite.describeLocation(cmd.location) + ".";
+                }
             }
             else { // EXISTENTIAL QUANTIFICATION
                 for (let loc of interpretLocation(cmd.location, state)) {
@@ -179,38 +190,43 @@ module Interpreter {
                         }
                     }
                 }
+                if (result.length == 0) { // ILLEGAL PLACEMENT
+                    throw "can not legally place "
+                        + cmd.entity.quantifier + " "
+                        + Shrdlite.describeObject(cmd.entity.object) + " "
+                        + Shrdlite.describeLocation(cmd.location) + ".";
+                }
             }
-        }
-
-        // Computes a DNF formula equivalent to the given CNF one.
-        function cnfToDnf(formula : Literal[][]) : DNFFormula {
-            if(formula.length == 0) {return [[]];}
-            if(formula[0].length == 0) {return [];}
-
-            var headHead = formula[0][0];
-            var noHeadHead = cloneMatrix(formula); noHeadHead[0].shift();
-            var tail = cloneMatrix(formula); tail.shift();
-
-            var ifTrue = cnfToDnf(tail);
-            var ifFalse = cnfToDnf(noHeadHead);
-
-            var positive = headHead;
-            var negative = { polarity : ! positive.polarity ,
-                             relation : positive.relation   ,
-                             args     : positive.args       } ;
-
-            for(var t of ifTrue)  {t.push(positive);}
-            for(var t of ifFalse) {t.push(negative);}
-
-            return ifTrue.concat(ifFalse);
         }
 
         for (var i = 0; i < result.length; i++) {
             result[i] = uniqueSort(result[i], compareLiteral);
         }
         result = uniqueSort(result, compareConjunction);
-
         return result;
+    }
+
+    // Computes a DNF formula equivalent to the given CNF one.
+    function cnfToDnf(formula : Literal[][]) : DNFFormula {
+        if(formula.length == 0) {return [[]];}
+        if(formula[0].length == 0) {return [];}
+
+        var headHead = formula[0][0];
+        var noHeadHead = cloneMatrix(formula); noHeadHead[0].shift();
+        var tail = cloneMatrix(formula); tail.shift();
+
+        var ifTrue = cnfToDnf(tail);
+        var ifFalse = cnfToDnf(noHeadHead);
+
+        var positive = headHead;
+        var negative = { polarity : ! positive.polarity ,
+                         relation : positive.relation   ,
+                         args     : positive.args       } ;
+
+        for(var t of ifTrue)  {t.push(positive);}
+        for(var t of ifFalse) {t.push(negative);}
+
+        return ifTrue.concat(ifFalse);
     }
 
     // Retrives the coordinates of an object. If the object is in a stack,
@@ -359,13 +375,15 @@ module Interpreter {
                                state : WorldState    ) : EntityInfo {
         var result = interpretObject(ent.object, state);
 
-        if(ent.quantifier == "the" && result.length == 0) {
+        if (result.length == 0) { // NO SUCH OBJECT EXISTS
             throw "there exists no object corresponding to "
                 + "\"" + Shrdlite.describeObject(ent.object) + "\".";
         }
-        else if(ent.quantifier == "the" && result.length > 1) {
+        else if (ent.quantifier == "the" && result.length > 1) {
+            // AMBIGUOUS USE OF "THE"
             throw "there exist many objects corresponding to "
-                + "\"" + Shrdlite.describeObject(ent.object) + "\".";
+                + "\"" + Shrdlite.describeObject(ent.object) +
+                "\". Please be more clear.";
         }
 
         return result;
@@ -379,7 +397,10 @@ module Interpreter {
         for (let candidate of interpretEntity(loc.entity, state)) {
             result.push( { rel: loc.relation, id: candidate } );
         }
-
+        if (result.length == 0) { // NO SUCH LOCATION EXISTS
+            throw "there exists no location corresponding to "
+                + "\"" + Shrdlite.describeLocation(loc) + "\".";
+        }
         return result;
     }
 }

@@ -109,7 +109,7 @@ module Shrdlite {
 
         }
         catch(err) {
-            world.printError("Interpretation error, " + err);
+            world.printError("Interpretation error: " + err);
             return;
         }
 
@@ -181,7 +181,8 @@ module Shrdlite {
     // Generates a location description.
     export function describeLocation(loc : Parser.Location) : string {
         var rel = loc.relation == "ontop" ? "on" : loc.relation;
-        return rel + " " + loc.entity.quantifier + " " +
+        var qnt = loc.entity.quantifier == "any" ? "a" : loc.entity.quantifier;
+        return rel + " " + qnt + " " +
             describeObject(loc.entity.object);
     }
 
