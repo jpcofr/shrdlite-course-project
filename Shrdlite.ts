@@ -138,8 +138,8 @@ module Shrdlite {
         return results;
     }
 
-    // Takes a list of parses and corresponding plans and generates descriptions
-    // of the parses that correspond to feasible interpretations.
+    // Takes a list of planner results and generates descriptions of the
+    // corresponding parse results.
     function grammarDisambiguationQuestions(plans : Planner.PlannerResult[]): string[] {
         var result = <string[]> [];
         plans.forEach((planResult) => {
@@ -150,6 +150,10 @@ module Shrdlite {
 
     // Generates a description of a command in a way that distinguishes
     // different interpretations of an ambiguous command.
+    // Since ambiguous commands must involve both an entity and a
+    // location (where it is unclear where the description of the
+    // entity ends and the location begins), we assume we are dealing
+    // a command to move an object to a location.
     export function describeCommand(cmd : Parser.Command): string {
         var result = "Take " + cmd.entity.quantifier
             + " " + describeObject(cmd.entity.object) +
