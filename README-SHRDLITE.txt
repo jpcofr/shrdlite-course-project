@@ -143,31 +143,40 @@ just before performing it.
 
 We wrote an extension to ask the user for clarification when their command can
 be parsed in more than one way.
-Whenever there are more that one plan, a clarification process begins. The
-clarification consists on generating a description of the action to be taken
-for each of the options the system could find a plan for. All the clarifications
-are shown to the user on the GUI, so the user just has to write the number
-associated to them. Finally, the system executes the chosen option.
+Whenever the function parseUtteranceIntoPlan in Shrdlite.ts finds more than one
+plan for a given utterance (since there is one plan returned for each interpretation
+and one interpretation for each parse, this means there must be more than one parse),
+a clarification process begins.
+The clarification consists of generating a description of the action to be taken
+for each of the options the system could find a plan for. All the descriptions
+are shown to the user on the GUI, and the user just has to enter the number
+associated with the option they prefer.
+Finally, the system executes the chosen option.
 
-World: added a variable to signal that the current processing state is
-clarification.
+The following modifications were made to implement this:
+
+World: added a variable to WorldState to signal that the current processing state
+is clarification, in order to be able to properly handle input from the user.
 
 interactive(world : World) : void: Modified to be able to manage user input
 regarding the chosen interpretation. Also takes care of prompting the user if
 further clarification is needed after processing a given command.
 
-function grammarDisambiguationQuestions(parses : Parser.ParseResult[],
-plans : Planner.PlannerResult[]): string[]
-Generates command descriptions from every plan using describeCommand.
+function grammarDisambiguationQuestions(plans : Planner.PlannerResult[])
+                                                : string[]
+Generates command descriptions for each given plan using describeCommand.
 
 describeCommand(cmd : Parser.Command): string
-Builds a textual description of a command.
+Builds a textual description of a command by describing the involved object
+and location, using the describeObject and describeLocation functions.
 
 How to test it?
-Utter a command whose parse is ambiguous:
+Utter a command whose parse is ambiguous, for instance:
            'put the black ball in a box on the floor'
+(Here the parser will not know whether the black ball is in a box, or if we should
+put it in a box on the floor).
 The system will show the user the possible parses it found: each one of them is
-numbered. The system expects the user for any of those numbers in order to
+numbered. The system expects the user to enter one of those numbers in order to
 explicitly execute that interpretation.
 
 * Quantifier handling extension
