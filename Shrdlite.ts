@@ -109,7 +109,7 @@ module Shrdlite {
 
         }
         catch(err) {
-            world.printError("Interpretation error: Could not interpret your command in a reasonable manner.");
+            world.printError("Interpretation error, " + err);
             return;
         }
 
@@ -127,7 +127,7 @@ module Shrdlite {
                 // Several plans were found, this means we have several interpretations.
                 // We generate descriptions of the different interpretations to ask
                 // the user for clarification.
-                results.push(grammarDisambiguationQuestions(parses,plans));
+                results.push(grammarDisambiguationQuestions(plans));
             }
         }
         catch(err) {
@@ -140,19 +140,17 @@ module Shrdlite {
 
     // Takes a list of parses and corresponding plans and generates descriptions
     // of the parses that correspond to feasible interpretations.
-    function grammarDisambiguationQuestions(parses : Parser.ParseResult[],
-                                    plans : Planner.PlannerResult[]
-                                   ): string[] {
+    function grammarDisambiguationQuestions(plans : Planner.PlannerResult[]): string[] {
         var result = <string[]> [];
         plans.forEach((planResult) => {
-            result.push(describeCommand(parses[planResult.whichParse].parse));
+            result.push(describeCommand(planResult.parse));
         });
         return result;
     }
 
     // Generates a description of a command in a way that distinguishes
     // different interpretations of an ambiguous command.
-    function describeCommand(cmd : Parser.Command): string {
+    export function describeCommand(cmd : Parser.Command): string {
         var result = "Take " + cmd.entity.quantifier
             + " " + describeObject(cmd.entity.object) +
             " and put it "
@@ -161,7 +159,7 @@ module Shrdlite {
     }
 
     // Generates an object description.
-    function describeObject(obj : Parser.Object) : string {
+    export function describeObject(obj : Parser.Object) : string {
         var result = "";
         if (obj.object) {
             result = describeObject(obj.object) + " which is "
@@ -177,7 +175,7 @@ module Shrdlite {
     }
 
     // Generates a location description.
-    function describeLocation(loc : Parser.Location) : string {
+    export function describeLocation(loc : Parser.Location) : string {
         var rel = loc.relation == "ontop" ? "on" : loc.relation;
         return rel + " " + loc.entity.quantifier + " " +
             describeObject(loc.entity.object);
