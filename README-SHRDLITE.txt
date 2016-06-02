@@ -31,6 +31,15 @@ TextWorld.ts : Upon more extensive testing of the interpreter we decided to
 World.ts : We extended the WorldState interface in order to implement our
            clarification extension.
            We added some utility functions concerning the world.
+           The function stringifyState is useful for comparing two WorldStates,
+           which is necessary since our planner uses a graph with WorldStates as
+           nodes.
+           The function againstPhysics checks whether a given relation between
+           two objects goes against the world's physical laws.
+           The funcion existsObjectId checks whether a given object id refers to
+           an object that can be found in the given world.
+           The function objectDescriptions creates a mapping from each object
+           in the world to its most concise description.
 
 shrdlite-html.ts : We commented out the code that made a popup appear and demand
                    affirmation on reload, since we found it unnecessary and
