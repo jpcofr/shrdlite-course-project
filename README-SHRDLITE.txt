@@ -4,33 +4,42 @@ This file is very important! This is where you describe what extensions you have
 === Files we have edited after forking ===
 
 ExampleWorlds.ts : Since we extended the WorldState interface when implementing
-our clarification extension, we needed to add the property "clarifying" to all of
-the example worlds.
+                   our clarification extension, we needed to add the property
+                   "clarifying" to all of the example worlds.
 
-Graph.ts : We implemented the A* search and created some data structures to use for the search.
-           While implementing the planner we decided to modify the search to return a list of
-           edges rather than a list of nodes.
+Graph.ts : We implemented the A* search and created some data structures to use
+           for the search (more on that below).
+           While implementing the planner we decided to modify the search to
+           return a list of edges rather than a list of nodes.
 
 Interpreter.ts : Implemented interpreter (more on that below).
 
-InterpreterTestCases.ts : We added some extra test cases for more extensive testing.
+InterpreterTestCases.ts : We added some extra test cases for more extensive
+                          testing.
 
-Planner.ts	merged	22 minutes ago
+Planner.ts	: Implemented planner (more on that below).
 
-Shrdlite.ts	Fix for throwing planning errors	an hour ago
+Shrdlite.ts : We made modifications in order to implement our clarification
+              extension.
 
-TestAStar.ts : Slightly modified after we modified the search to return edges rather than nodes.
+TestAStar.ts : Slightly modified after we modified the search to return edges
+               rather than nodes.
 
-TextWorld.ts :	Upon more extensive testing of the interpreter we decided to modify TextWorld.ts
-                to be able to start with an object held in the arm.
+TextWorld.ts :	Upon more extensive testing of the interpreter we decided to
+                modify TextWorld.ts to be able to start with an object held in
+                the arm.
 
-World.ts :
+World.ts : We extended the WorldState interface in order to implement our
+           clarification extension.
+           We added some utility functions concerning the world.
 
-shrdlite-html.ts : We commented out the code that made a popup appear and demand affirmation
-                   on reload, since we found it unnecessary and annoying.
+shrdlite-html.ts : We commented out the code that made a popup appear and demand
+                   affirmation on reload, since we found it unnecessary and
+                   annoying.
 
-shrdlite-offline.ts	: We modified this file very slightly so the offline version would
-                      still work after the clarification extension was implemented.
+shrdlite-offline.ts	: We modified this file very slightly so the offline version
+                      would still work after the clarification extension was
+                      implemented.
 
 === New files we have added ===
 
