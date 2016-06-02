@@ -59,6 +59,29 @@ module Interpreter {
         args: string[];
     }
 
+    // Computes a DNF formula equivalent to the given CNF one.
+    function cnfToDnf(formula : Literal[][]) : DNFFormula {
+        if(formula.length == 0) {return [[]];}
+        if(formula[0].length == 0) {return [];}
+
+        var headHead = formula[0][0];
+        var noHeadHead = cloneMatrix(formula); noHeadHead[0].shift();
+        var tail = cloneMatrix(formula); tail.shift();
+
+        var ifTrue = cnfToDnf(tail);
+        var ifFalse = cnfToDnf(noHeadHead);
+
+        var positive = headHead;
+        var negative = { polarity : ! positive.polarity ,
+                         relation : positive.relation   ,
+                         args     : positive.args       } ;
+
+        for(var t of ifTrue)  {t.push(positive);}
+        for(var t of ifFalse) {t.push(negative);}
+
+        return ifTrue.concat(ifFalse);
+    }
+
     // Stringifies interpretation results.
     export function stringify (result: InterpretationResult) : string {
         return stringifyDNF(result.interpretation);
@@ -204,29 +227,6 @@ module Interpreter {
         }
         result = uniqueSort(result, compareConjunction);
         return result;
-    }
-
-    // Computes a DNF formula equivalent to the given CNF one.
-    function cnfToDnf(formula : Literal[][]) : DNFFormula {
-        if(formula.length == 0) {return [[]];}
-        if(formula[0].length == 0) {return [];}
-
-        var headHead = formula[0][0];
-        var noHeadHead = cloneMatrix(formula); noHeadHead[0].shift();
-        var tail = cloneMatrix(formula); tail.shift();
-
-        var ifTrue = cnfToDnf(tail);
-        var ifFalse = cnfToDnf(noHeadHead);
-
-        var positive = headHead;
-        var negative = { polarity : ! positive.polarity ,
-                         relation : positive.relation   ,
-                         args     : positive.args       } ;
-
-        for(var t of ifTrue)  {t.push(positive);}
-        for(var t of ifFalse) {t.push(negative);}
-
-        return ifTrue.concat(ifFalse);
     }
 
     // Retrives the coordinates of an object. If the object is in a stack,
