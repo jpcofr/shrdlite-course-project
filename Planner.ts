@@ -19,12 +19,13 @@ module Planner {
     export function plan (interpretations : Interpreter.InterpretationResult[],
                           currentState : WorldState                           )
     : PlannerResult[] {
-        var errors : Error[] = [];
-        var plans : PlannerResult[] = [];
+        var errors = <Error[]>  [];
+        var plans = <PlannerResult[]> [];
         interpretations.forEach((interpretation) => {
             try {
-                var result : PlannerResult = <PlannerResult>interpretation;
-                result.plan = planInterpretation(result.interpretation, currentState);
+                var result = <PlannerResult>interpretation;
+                result.plan = planInterpretation(result.interpretation,
+                                                 currentState);
                 if (result.plan != null && result.plan.length == 0) {
                     result.plan.push("That is already true!");
                 }
@@ -36,8 +37,8 @@ module Planner {
         if (plans.length) {
             return plans;
         } else {
-            // Only throw the first error found.
-            throw "Planning error: Could not find a plan to execute your command.";
+            throw "Planning error: " +
+                  "Could not find a plan to execute your command.";
         }
     }
 
@@ -54,14 +55,12 @@ module Planner {
     // Returns a sequence of commands ("r" or "l") to move the arm between
     // the given columns.
     function makeCommands (sourceCol : number, destCol : number) : string[] {
-        var result : string[] = [];
+        var result = <string[]> [];
         var atomic = sourceCol < destCol ? "r" : "l";
-
         var distance = sourceCol - destCol;
         distance = distance < 0 ? -distance : distance;
 
         for (var i = 0; i < distance; i ++) {result.push(atomic);}
-
         return result;
     }
 
@@ -101,12 +100,13 @@ module Planner {
                         }
                         newState.stacks[sourceCol].pop();
 
-                        var commands : string[] = [];
-                        commands = commands.concat(makeCommands(state.arm, parseInt(sourceCol)));
+                        var commands = makeCommands(state.arm,
+                                                    parseInt(sourceCol));
                         commands.push("p");
 
                         var originalPosition =
-                            state.stacks[sourceCol][sourceRow - 1] != null ? state.stacks[sourceCol][sourceRow - 1] : "floor";
+                            state.stacks[sourceCol][sourceRow - 1] != null ?
+                            state.stacks[sourceCol][sourceRow - 1] : "floor";
                         result.push( { from : state           ,
                                        to   : newState        ,
                                        cost : commands.length ,
@@ -127,7 +127,8 @@ module Planner {
                          || !againstPhysics("ontop", heldObj, destLast, state)
                          || !againstPhysics("inside", heldObj, destLast, state)
                        ) {
-                        // The held object can legally be placed on top of the stack.
+                        // The held object can legally be placed on top of the
+                        // stack.
                         var newState : WorldState = {
                             stacks: cloneMatrix(state.stacks),
                             holding: null,
@@ -138,10 +139,11 @@ module Planner {
                         }
                         newState.stacks[destCol].push(state.holding);
 
-                        var commands : string[] = [];
-                        commands = commands.concat(makeCommands(state.arm, parseInt(destCol)));
+                        var commands = makeCommands(state.arm,
+                                                    parseInt(destCol));
                         commands.push("d");
-                        var destinationPosition = destLast != null ? destLast : "floor";
+                        var destinationPosition =
+                            destLast != null ? destLast : "floor";
 
                         result.push( { from : state           ,
                                        to   : newState        ,
@@ -165,7 +167,8 @@ module Planner {
      // Checks whether the given literal is satisfied in the given
      // world state.
     function isValid(lit : Interpreter.Literal, state : WorldState) : boolean {
-        // Either the relation is "holding" with one argument, or there are 2 arguments.
+        // Either the relation is "holding" with one argument,
+        // or there are 2 arguments.
         var isTrue : boolean = false;
         var ob1 : string = lit.args[0];
         if (lit.relation == "holding") {
@@ -190,14 +193,17 @@ module Planner {
                 switch(lit.relation) {
                 case "ontop" :
                     // Objects are "inside" boxes but "ontop" of other objects.
-                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1 && state.objects[ob2].form != "box");
+                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1
+                              && state.objects[ob2].form != "box");
                     break;
                 case "inside" :
-                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1 && state.objects[ob2].form == "box");
+                    isTrue = (loc1.col == loc2.col && loc1.row == loc2.row + 1
+                              && state.objects[ob2].form == "box");
                     // Special case for nested boxes.
                     var inside = state.stacks[loc2.col][loc2.row+1];
                     if (inside != null && state.objects[inside].form == "box") {
-                        isTrue = isTrue || (loc1.col == loc2.col && loc1.row == loc2.row + 2);
+                        isTrue = isTrue ||
+                            (loc1.col == loc2.col && loc1.row == loc2.row + 2);
                     }
                     break;
                 case "above" :
@@ -232,15 +238,16 @@ module Planner {
                 }
             }
             if (result) {
-                // All the literals in the conjunction are true in the current state.
+                // All the literals in the conjunction are true.
                 return true;
             }
         }
         return false;
     }
 
-    // A heuristic for the minimum number of steps needed for the robot arm to pick
-    // pick up an object assuming it is already positioned above the correct column.
+    // A heuristic for the minimum number of steps needed for the robot arm to
+    // pick up an object assuming the arm is already positioned above the correct
+    // column.
     function minAccess(obj: string, state: WorldState) : number {
         if (obj == "floor" || obj == state.holding) {
             return 0;
@@ -290,22 +297,27 @@ module Planner {
                 else {
                     // We are not dealing with the floor.
 
-                    // Minimum number of arm moves to the position of the object to be moved.
-                    var minArm = Math.min(Math.abs(armPos - loc1.col), Math.abs(armPos - loc2.col));
+                    // Minimum number of arm moves to the position of the
+                    // object to be moved.
+                    var minArm = Math.min(Math.abs(armPos - loc1.col),
+                                          Math.abs(armPos - loc2.col));
                     var access2 = minAccess(ob2,state);
                     switch(lit.relation) {
                     case "ontop" :
                     case "above" :
                     case "under" :
-                        // Minimum number of moves from original object position to new one.
+                        // Minimum number of moves from original object position
+                        // to new one.
                         var minMove = Math.abs(loc1.col - loc2.col);
                         break;
                     case "inside" :
                         var minMove = Math.abs(loc1.col - loc2.col);
-                        // Nested box exception, less moves are needed to access a box if
-                        // it's sufficient to place the object in another box inside the box.
+                        // Nested box exception, less moves are needed to access
+                        // a box if it's sufficient to place the object in
+                        // another box inside the box.
                         var inside = state.stacks[loc2.col][loc2.row + 1];
-                        if (inside != null && state.objects[inside].form == "box" && state.objects[ob1].size == "small") {
+                        if (inside != null && state.objects[inside].form == "box"
+                            && state.objects[ob1].size == "small") {
                             access2 = access2 - 4;
                         }
                         break;
@@ -330,10 +342,12 @@ module Planner {
 
     // A heuristic for how far a given state is from a goal DNF formula.
     // based on the cost being the length of a path (# of l,r,p and d commands).
-    function heuristic(state : WorldState, goal : Interpreter.DNFFormula) : number {
+    function heuristic(state : WorldState, goal : Interpreter.DNFFormula) :
+    number {
         var min = Number.MAX_VALUE;
         for (let conjunction of goal) {
-            var lHs = conjunction.map(function (x) { return litHeuristic(state,x);})
+            var lHs = conjunction.map(function (x) {
+                return litHeuristic(state,x);});
             var maxH = Math.max(...lHs);
             if (maxH < min) {
                 min = maxH;
@@ -363,7 +377,8 @@ module Planner {
         var toStr = (s: WorldState) => stringifyState(s);
         var objNamesMap = objectDescriptions(state);
         try {
-            var result = <SearchEdge[]> aStarSearch(graph, startNode, isGoal, h, 10, toStr);
+            var result = <SearchEdge[]>
+                aStarSearch(graph, startNode, isGoal, h, 10, toStr);
 
             var lastEdge = new SearchEdge();
             var isHolding = false;
@@ -371,23 +386,27 @@ module Planner {
             for (let edge of result) {
                 // Generate an utterance describing what the robot is doing.
                 var stepDesc = "";
-                var locDesc = edge.locId == "floor" ? "the floor" : objNamesMap.getValue(edge.locId);
+                var locDesc = edge.locId == "floor" ?
+                    "the floor" : objNamesMap.getValue(edge.locId);
                 if (isFirstEdge) {
                     isFirstEdge = false;
                     if (edge.isDropping){
-                        // If the robot starts with an object in the arm we describe putting the,
-                        // object down, otherwise "dropping" is combined with the previous "taking"
+                        // If the robot starts with an object in the arm we
+                        // describe putting the, object down, otherwise
+                        // "dropping" is combined with the previous "taking"
                         // into a "moving" utterance.
                         stepDesc+= "Dropping "+ objNamesMap.getValue(edge.objId);
                         stepDesc+= " on " + locDesc + ".";
                     }
                 } else if (edge.isDropping){
-                    var originDesc = lastEdge.locId == "floor" ? "the floor" : objNamesMap.getValue(lastEdge.locId);
+                    var originDesc = lastEdge.locId == "floor" ?
+                        "the floor" : objNamesMap.getValue(lastEdge.locId);
                     stepDesc+= "Moving "+ objNamesMap.getValue(edge.objId);
                     stepDesc+= " from "+ originDesc;
                     stepDesc+= " to "+ locDesc + ".";
                 } else if(result.indexOf(edge) == result.length-1){
-                    // The robot ends by picking up an object (and never puts it down).
+                    // The robot ends by picking up an object
+                    // (and never puts it down).
                     stepDesc+= "Taking "+ objNamesMap.getValue(edge.objId);
                     stepDesc+= " from "+ locDesc + ".";
                 }
