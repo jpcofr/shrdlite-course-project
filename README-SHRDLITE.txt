@@ -48,6 +48,42 @@ Util.ts : Contains various utility functions.
 
 * A* search
 
+The A* search algorithm is based on two data structures:
+  - A priority queue, implemented as a binary search tree, representing the
+      frontier. Its elements are structures consisting of a node and a priority
+      value, which is the cost of the current shortest path to the node plus 
+      the value of the heuristic function.
+  - A dictionary, containing information about each explored node, including
+    the frontier. To each node is associated:
+    - A reference to an element of the priority queue, where null indicates
+        that the node is not in the frontier.
+    - The parent edge in the current shortest path to it.
+    - The cost of the shortest path to it.
+    - The heuristic value, which is stored to avoid to compute it many times.
+
+For what concerns initialization, both data structures initially contain a
+single entry for the start node. 
+
+Then, as long as the queue is not empty and the
+top of the queue is not a goal node, we proceed with the usual A* search loop.
+
+Finally, in case of success, we compute the list of edges proceeding backwards
+from the goal node. We preferred a list of edges to a list of nodes as this
+easily allows carry additional information, as needed by other parts of the 
+code.
+
+It is important to note that the usage of a binary search tree is crucial,
+as we want to perform a graph search, not a tree search. In fact, when we
+encounter an explored node with a new shortest path, we modify it without
+invalidating the invariant of the priority queue. This is achieved by 
+removing the old record from the binary search tree and adding a new one.
+
+When we run "make aStarTests" we are warned that heuristics do not give the
+expected speedup. We tried to improve the code in several ways, but nothing
+avoided such message. We also tried, as suggested by the TA, to replace the BST
+with a heap-based structure, but tests show that this doesn't avoid the message
+and leads to worse peformance.
+
 * Interpreter
 
 The core interpretation function is interpretCommand, which takes a parsed command
@@ -138,3 +174,7 @@ This extension can be naturally divided into two parts:
   "Object" node that has zero or more than one interpretation.
 
 How to test it?
+Utter a command to move all objects matching a description:
+         'put all large balls inside a box'
+The system will try to reach a world state where each large ball is inside 
+a box.
