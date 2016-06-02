@@ -36,7 +36,7 @@ World.ts : We extended the WorldState interface in order to implement our
            nodes.
            The function againstPhysics checks whether a given relation between
            two objects goes against the world's physical laws.
-           The funcion existsObjectId checks whether a given object id refers to
+           The function existsObjectId checks whether a given object id refers to
            an object that can be found in the given world.
            The function objectDescriptions creates a mapping from each object
            in the world to its most concise description.
@@ -136,14 +136,14 @@ the data on the SearchEdge.
 
 - planInterpretation has been modified to add the action description to the plan
 array. It constructs this phrase by being aware of the arm's state and what has
-happened in the pervious edge/action.
+happened in the previous edge/action.
 
 - class SearchEdge extends Edge<WorldState> has been modified to allow information
 about the arm's current action and the object and location it is interacting
 with.
 
 How to test it?
-The only requirement is to enter a command that can be parseda and interpreted
+The only requirement is to enter a command that can be parsed and interpreted
 and describes a reachable goal.
 The system will output the description of every action on the interaction panel
 just before performing it.
