@@ -1,10 +1,10 @@
-
+=== SHRDLITE PROJECT BY TEAM A-STARS ===
 
 === Note about duplicate usernames on github ===
 
-By Michele Bizzoca : after having updated my linux distribution, by mistake I 
-started using a new github username, "gentzen", instead of the original one, 
-"mbx_uni_aka". Then, please, consider commits from both these usernames as mine. 
+By Michele Bizzoca : after having updated my linux distribution, by mistake I
+started using a new github username, "gentzen", instead of the original one,
+"mbx_uni_aka". Then, please, consider commits from both these usernames as mine.
 
 === Files we have edited after forking ===
 
@@ -42,7 +42,7 @@ shrdlite-html.ts : We commented out the code that made a popup appear and demand
                    affirmation on reload, since we found it unnecessary and
                    annoying.
 
-shrdlite-offline.ts           : We modified this file very slightly so the offline version
+shrdlite-offline.ts : We modified this file very slightly so the offline version
                       would still work after the clarification extension was
                       implemented.
 
@@ -55,6 +55,15 @@ Util.ts : Contains various utility functions.
 * A* search
 
 * Interpreter
+
+The core interpretation function is interpretCommand, which takes a parsed command
+and returns a DNF formula. It interprets the different parts of the command
+(entities and locations), and combines the results.
+The functions interpretLocation, interpretEntity, and interpretObject interpret the
+corresponding parse tree components and return all possibilities.
+Since both entities and locations refer to objects, we look at the attributes of the
+world objects and their locations relative to each other in order to interpret the
+meaning of the command (i.e. what object could "the ball in the box" refer to?).
 
 * Planner
 
@@ -85,8 +94,8 @@ about the arm's current action and the object and location it is interacting
 with.
 
 How to test it?
-
-
+The only requirement is to utter a parseable sentence. The system will output
+the description of every action just before doing it on the interaction panel.
 
 * Clarification extension
 
@@ -113,18 +122,25 @@ describeCommand(cmd : Parser.Command): string
 Builds a textual description of a command.
 
 How to test it?
+Utter a command whose parse is ambiguous:
+           'put the black ball in a box on the floor'
+The system will show the user the possible parses it found: each one of them is
+numbered. The system expects the user for any of those numbers in order to
+explicitly execute that interpretation.
 
 * Quantifier handling extension
 This extension can be naturally divided into two parts:
 - Handling of the universal quantifiers: we managed these quantifiers only in
-  the "Entity" node which is immediate child of the "Command" node, as in all 
+  the "Entity" node which is immediate child of the "Command" node, as in all
   pre-defined questions universal quantification affected only such entity.
   We wrote a function, named "cnfToDnf",
-  to convert CNF formulae into DNF ones. Then, we added code (to the 
-  interpreter) that checks whether the mentioned entity is universally 
-  quantified, in which case we straightforwardly generate a CNF formula 
+  to convert CNF formulae into DNF ones. Then, we added code (to the
+  interpreter) that checks whether the mentioned entity is universally
+  quantified, in which case we straightforwardly generate a CNF formula
   which is then converted into a DNF one.
 - Handling of the singleton quantifiers: we managed these quantifiers in
-  every node of the parse tree, relying on exception handling. Our approach 
-  has been to warn the user whenever such a quantifier is applied to an 
+  every node of the parse tree, relying on exception handling. Our approach
+  has been to warn the user whenever such a quantifier is applied to an
   "Object" node that has zero or more than one interpretation.
+
+How to test it?
