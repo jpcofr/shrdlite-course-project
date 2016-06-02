@@ -1,11 +1,5 @@
 === SHRDLITE PROJECT BY TEAM A-STARS ===
 
-=== Note about duplicate usernames on github ===
-
-By Michele Bizzoca : after having updated my linux distribution, by mistake I
-started using a new github username, "gentzen", instead of the original one,
-"mbx_uni_aka". Then, please, consider commits from both these usernames as mine.
-
 === Files we have edited after forking ===
 
 ExampleWorlds.ts : Since we extended the WorldState interface when implementing
@@ -130,7 +124,7 @@ explicitly execute that interpretation.
 
 * Quantifier handling extension
 This extension can be naturally divided into two parts:
-- Handling of the universal quantifiers: we managed these quantifiers only in
+- Handling universal quantifiers (all): we managed these quantifiers only in
   the "Entity" node which is immediate child of the "Command" node, as in all
   pre-defined questions universal quantification affected only such entity.
   We wrote a function, named "cnfToDnf",
@@ -138,7 +132,7 @@ This extension can be naturally divided into two parts:
   interpreter) that checks whether the mentioned entity is universally
   quantified, in which case we straightforwardly generate a CNF formula
   which is then converted into a DNF one.
-- Handling of the singleton quantifiers: we managed these quantifiers in
+- Handling singleton quantifiers (the): we managed these quantifiers in
   every node of the parse tree, relying on exception handling. Our approach
   has been to warn the user whenever such a quantifier is applied to an
   "Object" node that has zero or more than one interpretation.
