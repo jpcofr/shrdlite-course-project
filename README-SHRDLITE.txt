@@ -1,4 +1,4 @@
-
+=== SHRDLITE PROJECT BY TEAM A-STARS ===
 
 === Note about duplicate usernames on github ===
 
@@ -42,7 +42,7 @@ shrdlite-html.ts : We commented out the code that made a popup appear and demand
                    affirmation on reload, since we found it unnecessary and
                    annoying.
 
-shrdlite-offline.ts           : We modified this file very slightly so the offline version
+shrdlite-offline.ts : We modified this file very slightly so the offline version
                       would still work after the clarification extension was
                       implemented.
 
@@ -55,6 +55,15 @@ Util.ts : Contains various utility functions.
 * A* search
 
 * Interpreter
+
+The core interpretation function is interpretCommand, which takes a parsed command
+and returns a DNF formula. It interprets the different parts of the command
+(entities and locations), and combines the results.
+The functions interpretLocation, interpretEntity, and interpretObject interpret the
+corresponding parse tree components and return all possibilities.
+Since both entities and locations refer to objects, we look at the attributes of the
+world objects and their locations relative to each other in order to interpret the
+meaning of the command (i.e. what object could "the ball in the box" refer to?).
 
 * Planner
 
