@@ -1,9 +1,4 @@
-In your repository you should also include a file called README-SHRDLITE, again
-describing what’s in each file (outside of what we expect) and any relevant
-high-level descriptions or discussion of your implementations.
-This file is very important! This is where you describe what extensions you have
-implemented and how they work. Don’t forget to suggest examples that show off
-your extensions and other peculiarities of your system.
+
 
 === Files we have edited after forking ===
 
@@ -83,11 +78,14 @@ state and what has happened just before in the world.
 about the arm's current action and the object and location it is interacting
 with.
 
+How to test it?
+
+
 
 * Clarification extension
 
-We wrote an extension to ask the user for clarification when their command can be
-parsed in more than one way.
+We wrote an extension to ask the user for clarification when their command can
+be parsed in more than one way.
 Whenever there are more that one plan, a clarification process begins. The
 clarification consists on generating a description of the action to be taken
 for each of the options the system could find a plan for. All the clarifications
@@ -108,4 +106,12 @@ Generates command descriptions from every plan using describeCommand.
 describeCommand(cmd : Parser.Command): string
 Builds a textual description of a command.
 
+How to test it?
+
 * Quantifier handling extension
+
+The fulfillment of the requirements to handle the universal quantifier "all" and
+the existential counterpart required the modification of the interpretation
+algorithm
+
+cnfToDnf(formula : Literal[][]) : DNFFormula) : Converts a CNF to a DNF
