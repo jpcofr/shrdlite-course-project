@@ -115,16 +115,16 @@ Builds a textual description of a command.
 How to test it?
 
 * Quantifier handling extension
-<<<<<<< HEAD
 This extension can be naturally divided into two parts:
-- Handling of the universal quantifiers: we noticed that in all pre-defined 
-  questions, universal quantification affected only the "entity" which is
-  immediate child of "command". Then, we wrote 
-=======
-
-The fulfillment of the requirements to handle the universal quantifier "all" and
-the existential counterpart required the modification of the interpretation
-algorithm
-
-cnfToDnf(formula : Literal[][]) : DNFFormula) : Converts a CNF to a DNF
->>>>>>> f46059fee9256568ff6ade7fce1278c94ee007d0
+- Handling of the universal quantifiers: we managed these quantifiers only in
+  the "Entity" node which is immediate child of the "Command" node, as in all 
+  pre-defined questions universal quantification affected only such entity.
+  We wrote a function, named "cnfToDnf",
+  to convert CNF formulae into DNF ones. Then, we added code (to the 
+  interpreter) that checks whether the mentioned entity is universally 
+  quantified, in which case we straightforwardly generate a CNF formula 
+  which is then converted into a DNF one.
+- Handling of the singleton quantifiers: we managed these quantifiers in
+  every node of the parse tree, relying on exception handling. Our approach 
+  has been to warn the user whenever such a quantifier is applied to an 
+  "Object" node that has zero or more than one interpretation.
