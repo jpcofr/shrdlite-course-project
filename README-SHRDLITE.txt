@@ -67,6 +67,46 @@ meaning of the command (i.e. what object could "the ball in the box" refer to?).
 
 * Planner
 
+We use the class SearchSpace to generate a graph to search in.
+The graph has WorldStates as nodes, with an edge from one state
+to another if the latter is reachable from the former by:
+ - Putting the object in the arm down in a free location
+   (if the arm is holding an object)
+ - Picking up an object that is at the top of a stack
+   (if the arm is empty).
+
+The cost of an edge is the number of arm moves ("l", "r", "p" or "d")
+needed.
+
+We extended the edge class to contain information about the commands
+needed to perform the edge's changes so we can easily find the commands
+once the search is complete. The edges also contain information about
+what object is being moved to/from which location and whether it is
+being picked up or dropped, in order to aid our logging extension.
+
+Our heuristic function, heuristic, takes a WorldState and a DNFFormula
+and returns a meaningful non-zero underestimate of the number of arm
+moves required for the Formula to be satisfied starting from the given
+state.
+The function minAccess returns the minimum number of arm moves required to
+access an object (we must get all the objects on top of it out of the
+way, requiring at least 4 arm moves for each of those objects),
+and the function litHeuristic gives a heuristic of a single literal
+by combining the minAccess values of the involved objects with the minimum
+number of arm moves required to move one of the objects to a position
+satisfying the literal's relation.
+The heuristic value for a conjunction of literals is the maximum heuristic
+value of the literals involved, since all the conjunction's literals must
+be satisfied in order for the conjunction to be satisfied, in particular
+the one with the highest heuristic value, but the other literals may be
+satisfied as well in the process of satisfying the max value one.
+The heuristic value for a disjunction of literals is the minimum heuristic
+value of the literals involved, since is suffices to satisfy one of the
+literals.
+
+The function planInterpretation uses the A* search implemented in Graph.ts
+to search the graph of WorldStates and find the shortest path to a goal.
+
 === Extensions ===
 
 * Logging extension
