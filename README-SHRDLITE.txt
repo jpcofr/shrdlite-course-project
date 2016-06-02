@@ -1,5 +1,9 @@
-In your repository you should also include a file called README-SHRDLITE, again describing what’s in each file (outside of what we expect) and any relevant high-level descriptions or discussion of your implementations.
-This file is very important! This is where you describe what extensions you have implemented and how they work. Don’t forget to suggest examples that show off your extensions and other peculiarities of your system.
+In your repository you should also include a file called README-SHRDLITE, again
+describing what’s in each file (outside of what we expect) and any relevant
+high-level descriptions or discussion of your implementations.
+This file is very important! This is where you describe what extensions you have
+implemented and how they work. Don’t forget to suggest examples that show off
+your extensions and other peculiarities of your system.
 
 === Files we have edited after forking ===
 
@@ -17,7 +21,7 @@ Interpreter.ts : Implemented interpreter (more on that below).
 InterpreterTestCases.ts : We added some extra test cases for more extensive
                           testing.
 
-Planner.ts	: Implemented planner (more on that below).
+Planner.ts : Implemented planner (more on that below).
 
 Shrdlite.ts : We made modifications in order to implement our clarification
               extension.
@@ -25,7 +29,7 @@ Shrdlite.ts : We made modifications in order to implement our clarification
 TestAStar.ts : Slightly modified after we modified the search to return edges
                rather than nodes.
 
-TextWorld.ts :	Upon more extensive testing of the interpreter we decided to
+TextWorld.ts : Upon more extensive testing of the interpreter we decided to
                 modify TextWorld.ts to be able to start with an object held in
                 the arm.
 
@@ -37,7 +41,7 @@ shrdlite-html.ts : We commented out the code that made a popup appear and demand
                    affirmation on reload, since we found it unnecessary and
                    annoying.
 
-shrdlite-offline.ts	: We modified this file very slightly so the offline version
+shrdlite-offline.ts           : We modified this file very slightly so the offline version
                       would still work after the clarification extension was
                       implemented.
 
@@ -81,6 +85,7 @@ with.
 
 
 * Clarification extension
+
 We wrote an extension to ask the user for clarification when their command can be
 parsed in more than one way.
 Whenever there are more that one plan, a clarification process begins. The
@@ -93,7 +98,7 @@ World: added a variable to signal that the current processing state is
 clarification.
 
 interactive(world : World) : void: Modified to be able to manage user input
-regarding the chosen interpretation. Also takes care of promting the user if
+regarding the chosen interpretation. Also takes care of prompting the user if
 further clarification is needed after processing a given command.
 
 function grammarDisambiguationQuestions(parses : Parser.ParseResult[],
